@@ -1,0 +1,25 @@
+---
+exp_name: VGAE
+exp_dir: exp/VGAE
+use_gpu: true
+device: cuda:0
+seed: 1234
+dataset:
+  name: cora
+  data_path: data/
+model:
+  name: VGAE
+  num_nodes: 2708
+  embedding_dim: 32
+  hidden_dim: 32
+  has_feature: false
+  num_GNN_layers: 2
+train:
+  optimizer: Adam
+  lr: 3.0e-4
+  max_epoch: 1000
+  display_iter: 10
+  snapshot_epoch: 1000
+test:
+  test_model_dir: exp/VGAE/VGAE_cora_2021-Feb-25-10-38-59_12345
+  test_model_name: model_snapshot_0001000.pth

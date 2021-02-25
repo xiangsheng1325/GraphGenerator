@@ -8,7 +8,7 @@ def edgelist_to_graph(path):
         return graph
     except:
         print("Wrong path entered! Absolute path of edgelist file pxpected.")
-        sys.exit(0)
+        sys.exit(1)
 
 
 def pathlist_to_graphlist(path):

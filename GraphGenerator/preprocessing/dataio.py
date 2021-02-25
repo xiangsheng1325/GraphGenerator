@@ -11,6 +11,6 @@ def load_data(path):
 
 
 def save_data(obj, name):
-    pickle.dump(obj, open("{}.graphs".format(name), "wb"))
+    pickle.dump(obj, open("{}".format(name), "wb"))
     return 0
 

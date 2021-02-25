@@ -91,7 +91,7 @@ def degree_stats(graph_ref_list, graph_pred_list, is_parallel=True):
         G for G in graph_pred_list if not G.number_of_nodes() == 0
     ]
 
-    prev = datetime.now()
+    prev = datetime.datetime.now()
     if is_parallel:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             for deg_hist in executor.map(degree_worker, graph_ref_list):
@@ -112,15 +112,17 @@ def degree_stats(graph_ref_list, graph_pred_list, is_parallel=True):
     mmd_dist = compute_mmd(sample_ref, sample_pred, kernel=gaussian_tv, sigma=2.0)
     # mmd_dist = compute_mmd(sample_ref, sample_pred, kernel=gaussian)
 
-    elapsed = datetime.now() - prev
+    elapsed = datetime.datetime.now() - prev
     if PRINT_TIME:
         print('Time computing degree mmd: ', elapsed)
     return mmd_dist
 
 
 def print_result(metrics, graph_ref, graph_pred):
+    output = {}
     if 'degree' in metrics:
         eval_metric = degree_stats(graph_ref, graph_pred)
         print('Degree: {}'.format(eval_metric))
-    return
+        output['degree']=eval_metric
+    return output
 
