@@ -1,9 +1,10 @@
 import scipy.sparse as sp
-import torch, copy, math
+import torch, copy, math, datetime
 from torch.nn.modules.module import Module
 from torch.nn.parameter import Parameter
 from torch.autograd import Variable
 import torch.nn as nn
+import networkx as nx
 import torch.nn.functional as F
 import numpy as np
 
@@ -36,7 +37,7 @@ def sp_normalize(adj_def, device='cpu'):
     # degree_mat_inv_sqrt = coo_to_csp(degree_mat_inv_sqrt.tocoo())
     adj_normalized = degree_mat_inv_sqrt.__matmul__(support)
     adj_normalized = coo_to_csp(adj_normalized.tocoo())
-    return adj_normalized, rowsum.astype(int)
+    return adj_normalized
 
 
 class GraphConvolution(Module):
@@ -80,7 +81,7 @@ class GAE(nn.Module):
         super(GAE, self).__init__()
         self.encoder = GraphConvolution(input_size, hidden_size, act=act)
         self.medium = nn.ModuleList([GraphConvolution(hidden_size, hidden_size, act=act) for i in range(layers-2)])
-        self.mean = GraphConvolution(hidden_size, emb_size, act=lambda x: x)
+        self.mean = GraphConvolution(hidden_size, emb_size, act=act)
 
     def forward(self, adj, x=None, device='cuda:0'):
         if x is None:
@@ -95,15 +96,65 @@ class GAE(nn.Module):
 
 def train(sp_adj, feature, config, model, optimizer):
     norm = sp_adj.shape[0] * sp_adj.shape[0] / float((sp_adj.shape[0] * sp_adj.shape[0] - sp_adj.sum()) * 2)
-    pos_weight = float(sp_adj.shape[0] * sp_adj.shape[0] - sp_adj.sum()) / sp_adj.sum()
+    pos_weight = torch.tensor(float(sp_adj.shape[0] * sp_adj.shape[0] - sp_adj.sum()) / sp_adj.sum()).to(config.device)
     adj_def = torch.from_numpy(sp_adj.toarray()).to(config.device)
     adj_normalized = sp_normalize(sp_adj, config.device)
     adj_normalized = Variable(adj_normalized).to(config.device)
-    for epoch in range(config.max_epochs):
+    training_time = datetime.timedelta()
+    for epoch in range(config.train.max_epochs):
+        epoch_start = datetime.datetime.now()
         adj_score = model(adj_normalized, feature, device=config.device)
         train_loss = norm * F.binary_cross_entropy_with_logits(adj_score, adj_def,
                                                                pos_weight=pos_weight)
         optimizer.zero_grad()
         train_loss.backward()
         optimizer.step()
-    return 0
+        epoch_time = datetime.datetime.now() - epoch_start
+        training_time += epoch_time
+        print('[%03d/%d]: loss:%.4f, time per epoch:%.8s'
+              % (epoch + 1,
+                 config.train.max_epochs,
+                 train_loss,
+                 str(epoch_time)[-12:]))
+    print('### Training Time Consumption:%.8s'
+          % str(training_time)[-12:])
+    return model
+
+
+def top_n_indexes(arr, n):
+    idx = np.argpartition(arr, arr.size - n, axis=None)[-n:]
+    width = arr.shape[1]
+    return [divmod(i, width) for i in idx]
+
+
+def topk_adj(adj, k):
+    if isinstance(adj, torch.Tensor):
+        adj_ = adj.data.cpu().numpy()
+    else:
+        adj_ = adj
+    assert ((adj_ == adj_.T).all())
+    adj_ = (adj_ - np.min(adj_)) / np.ptp(adj_)
+    adj_ -= np.diag(np.diag(adj_))
+    res = np.zeros(adj.shape)
+    tri_adj = np.triu(adj_)
+    inds = top_n_indexes(tri_adj, int(k//2))
+    for ind in inds:
+        i = ind[0]
+        j = ind[1]
+        res[i, j] = 1.0
+        res[j, i] = 1.0
+    return res
+
+
+def test(sp_adj, feature, config, model, repeat=1):
+    generated_graphs = []
+    with torch.no_grad():
+        adj_normalized = sp_normalize(sp_adj, config.device)
+        adj_normalized = Variable(adj_normalized).to(config.device)
+        for i in range(repeat):
+            adj_score = model(adj_normalized, feature, device=config.device)
+            adj = topk_adj(adj_score, k=sp_adj.sum())
+            tmp_graph = nx.from_numpy_array(adj)
+            generated_graphs.append(tmp_graph)
+    return generated_graphs
+

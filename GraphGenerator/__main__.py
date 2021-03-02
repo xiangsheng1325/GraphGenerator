@@ -2,7 +2,9 @@ import argparse, sys, pickle
 from GraphGenerator.metrics import mmd
 from GraphGenerator import train
 from GraphGenerator.preprocessing import dataio, utils
+from GraphGenerator.utils.arg_utils import get_config
 import pandas as pd
+
 
 
 def print_variables(vdict, name="args"):
@@ -24,6 +26,7 @@ if __name__ == '__main__':
                         required=True)
     parser.add_argument("-i", "--input", help="Path of input file. Example:```-i google.txt```", default=None, required=True)
     parser.add_argument("-o", "--output", help="Specify the path of output file.", default=None)
+    parser.add_argument("-c", "--config", help="Specify the path of config file.", default=None)
     parser.add_argument("-g", "--generator", help="choose the generator. Example:```-g sbm```", default=None)
     parser.add_argument("-e", "--evaluate", help="choose the evaluating metrics.", default=None)
     parser.add_argument("-r", "--ref", help="Path of referenced graphs(Only required in evaluate phase)", default=None)
@@ -44,10 +47,19 @@ if __name__ == '__main__':
     elif args.phase == 'train':
         print("Start loading data...")
         input_data = dataio.load_data(args.input)
+        # args.config = "config/vgae.yaml"
+        config = get_config(args.config)
         print("Start (training and) inferencing graph...")
         output_data = []
-        for graph in input_data:
-            tmp_data = train.train_and_inference(graph, args.generator)
+        if isinstance(input_data, list):
+            for graph in input_data:
+                tmp_data = train.train_and_inference(graph, args.generator, config=config)
+                if isinstance(tmp_data, list):
+                    output_data.extend(tmp_data)
+                else:
+                    output_data.append(tmp_data)
+        else:
+            tmp_data = train.train_and_inference(input_data, args.generator)
             if isinstance(tmp_data, list):
                 output_data.extend(tmp_data)
             else:
