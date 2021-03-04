@@ -1,8 +1,9 @@
 ---
 exp_name: VGAE
 exp_dir: exp/VGAE
-use_gpu: true
 device: cuda:0
+gpu: 1
+#device: cpu
 seed: 1234
 dataset:
   name: top10

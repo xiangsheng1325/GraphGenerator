@@ -1,4 +1,5 @@
-import argparse, sys, pickle
+import argparse, sys, pickle, warnings, os
+warnings.filterwarnings("ignore")
 from GraphGenerator.metrics import mmd
 from GraphGenerator import train
 from GraphGenerator.preprocessing import dataio, utils
@@ -22,9 +23,9 @@ if __name__ == '__main__':
     # get arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--phase", help="Choose phase.", default="preprocessing", type=str,
-                        choices=["preprocessing", "train", "evaluate"],
+                        choices=["preprocessing", "train", "evaluate", "test"],
                         required=True)
-    parser.add_argument("-i", "--input", help="Path of input file. Example:```-i google.txt```", default=None, required=True)
+    parser.add_argument("-i", "--input", help="Path of input file. Example:```-i google.txt```", default=None)
     parser.add_argument("-o", "--output", help="Specify the path of output file.", default=None)
     parser.add_argument("-c", "--config", help="Specify the path of config file.", default=None)
     parser.add_argument("-g", "--generator", help="choose the generator. Example:```-g sbm```", default=None)
@@ -49,6 +50,7 @@ if __name__ == '__main__':
         input_data = dataio.load_data(args.input)
         # args.config = "config/vgae.yaml"
         config = get_config(args.config)
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(config.gpu)
         print("Start (training and) inferencing graph...")
         output_data = []
         if isinstance(input_data, list):
@@ -81,5 +83,14 @@ if __name__ == '__main__':
             output_name = args.output
         tmp_pd = pd.DataFrame(result)
         tmp_pd.to_csv(output_name)
+    elif args.phase == 'test':
+        print("Start test the whole package...")
+        from GraphGenerator.models.vgae import *
+        from GraphGenerator.models.sbm import *
+        from GraphGenerator.utils.arg_utils import *
+        from GraphGenerator.metrics.mmd import *
+        from GraphGenerator.train import *
+        from GraphGenerator.preprocessing.utils import *
+        from GraphGenerator.preprocessing.dataio import *
     print("Done!")
     sys.exit(0)
