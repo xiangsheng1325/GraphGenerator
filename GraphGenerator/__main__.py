@@ -28,7 +28,8 @@ if __name__ == '__main__':
     parser.add_argument("-i", "--input", help="Path of input file. Example:```-i google.txt```", default=None)
     parser.add_argument("-o", "--output", help="Specify the path of output file.", default=None)
     parser.add_argument("-c", "--config", help="Specify the path of config file.", default=None)
-    parser.add_argument("-g", "--generator", help="choose the generator. Example:```-g sbm```", default=None)
+    parser.add_argument("-g", "--generator", help="choose the generator. Example:```-g sbm```", default="vgae",
+                        choices=["sbm", "dcsbm", "vgae"])
     parser.add_argument("-e", "--evaluate", help="choose the evaluating metrics.", default=None)
     parser.add_argument("-r", "--ref", help="Path of referenced graphs(Only required in evaluate phase)", default=None)
     args = parser.parse_args()
@@ -85,12 +86,7 @@ if __name__ == '__main__':
         tmp_pd.to_csv(output_name)
     elif args.phase == 'test':
         print("Start test the whole package...")
-        from GraphGenerator.models.vgae import *
-        from GraphGenerator.models.sbm import *
-        from GraphGenerator.utils.arg_utils import *
-        from GraphGenerator.metrics.mmd import *
-        from GraphGenerator.train import *
-        from GraphGenerator.preprocessing.utils import *
-        from GraphGenerator.preprocessing.dataio import *
+        from GraphGenerator.test import *
+        print("Test finished.")
     print("Done!")
     sys.exit(0)

@@ -13,6 +13,7 @@ model:
   num_nodes: 743
   embedding_dim: 32
   hidden_dim: 32
+  variational: false
   has_feature: false
   num_GNN_layers: 2
 train:
