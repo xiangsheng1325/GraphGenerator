@@ -25,11 +25,34 @@ bash run_test.sh
 ```
 
 ## GraphGenerator Usage
+
 **1. Preprocess data**
+
+We prefer to converting graph data into the same data type. If the input data is ready, this step can be skipped.
+
+_Example:_
 * run `python -m GraphGenerator --phase preprocessing -i google.txt -o google.graph`
 
-**2. Train and infer new graphs**
+**2. Test the usage of graph generator**
+
+Before training the deep learning based graph generators,
+we prefer to test whether there are bugs in our model implementations.
+If the generator runs well, this step can be skipped.
+
+_Example:_
+* run `python -m GraphGenerator --phase test -g bigg --config config/bigg.yaml`
+
+**3. Train and infer new graphs**
+
+Enjoy your graph simulation and graph data generation.
+
+_Example:_
 * run `python -m GraphGenerator --phase train -i google.graph -o new_google.graphs -g vgae --config config/vgae.yaml`
 
-**3. Evaluate the results**
+**4. Evaluate the results**
+
+Calculating the distance between two set of graphs to evaluate the experimental results. 
+
+_Example:_
 * run `python -m GraphGenerator --phase evaluate -i new_google.graphs -r google.graph`
+
