@@ -1,4 +1,4 @@
-import time, os, yaml
+import time, os, yaml, torch
 from easydict import EasyDict as edict
 
 
@@ -40,3 +40,16 @@ def edict2dict(edict_obj):
 def mkdir(folder):
   if not os.path.isdir(folder):
     os.makedirs(folder)
+
+
+def set_device(gpu, config):
+    if torch.cuda.is_available() and gpu >= 0:
+        config.gpu = gpu
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
+        config.device = 'cuda:0'
+        # print('use gpu indexed: %d' % gpu)
+    else:
+        config.gpu = -1
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+        config.device = 'cpu'
+        # print('use cpu')

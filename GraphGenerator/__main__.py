@@ -1,6 +1,7 @@
 import argparse, sys, pickle, warnings, os
 warnings.filterwarnings("ignore")
 from GraphGenerator.metrics import mmd
+from GraphGenerator.test import test_package
 from GraphGenerator import train
 from GraphGenerator.preprocessing import dataio, utils
 from GraphGenerator.utils.arg_utils import get_config
@@ -85,8 +86,8 @@ if __name__ == '__main__':
         tmp_pd = pd.DataFrame(result)
         tmp_pd.to_csv(output_name)
     elif args.phase == 'test':
-        print("Start test the whole package...")
-        from GraphGenerator.test import *
+        print("Start test the package...")
+        test_package(args)
         print("Test finished.")
     print("Done!")
     sys.exit(0)

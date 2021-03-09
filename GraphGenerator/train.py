@@ -130,7 +130,8 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
                 model = vgae.VGAE(config.model.num_nodes,
                                   config.model.embedding_dim,
                                   config.model.hidden_dim,
-                                  act=F.relu).to(config.device)
+                                  act=F.relu,
+                                  layers=config.model.num_GNN_layers).to(config.device)
             elif generator == 'graphite':
                 model = graphite.GraphiteVAE(config.model.num_nodes,
                                              config.model.hidden_dim,
@@ -145,7 +146,8 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
                 model = vgae.GAE(config.model.num_nodes,
                                  config.model.embedding_dim,
                                  config.model.hidden_dim,
-                                 act=F.relu).to(config.device)
+                                 act=F.relu,
+                                 layers=config.model.num_GNN_layers).to(config.device)
             elif generator == 'graphite':
                 model = graphite.GraphiteAE(config.model.num_nodes,
                                             config.model.hidden_dim,

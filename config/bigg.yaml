@@ -1,6 +1,6 @@
 ---
-exp_name: Graphite
-exp_dir: exp/Graphite
+exp_name: BiGG
+exp_dir: exp/BiGG
 device: cuda:0
 gpu: 1
 #device: cpu
@@ -8,17 +8,23 @@ seed: 1234
 dataset:
   name: top10
   data_path: data/
+  directed: false
+  self_loop: false
+  bfs_permute: false
 model:
-  name: Graphite
-  num_nodes: 743
-  embedding_dim: 32
-  hidden_dim: 32
-  decoding_dim: 32
-  variational: false
-  has_feature: false
+  name: BiGG
+  max_num_nodes: 743
+  embed_dim: 256
+  num_RNN_layers: 2
+  bits_compress: 256
+  position_encoding: true
+  position_base: 10000
+  share_param: true
+  blksize: -1
 train:
   optimizer: Adam
   lr: 1.0e-2
+  gradient_clip: 5
   max_epochs: 1000
   display_iter: 10
   snapshot_epoch: 1000

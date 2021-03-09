@@ -1,4 +1,23 @@
-import setuptools
+from setuptools.command.develop import develop
+import setuptools, os, subprocess
+BASEPATH = os.path.dirname(os.path.abspath(__file__))
+
+
+class CustomDevelop(develop):
+    def run(self):
+        original_cwd = os.getcwd()
+
+        folders = [
+            os.path.join(BASEPATH, 'GraphGenerator/models/bigg/tree_clib'),
+        ]
+        for folder in folders:
+            os.chdir(folder)
+            subprocess.check_call(['make'])
+
+        os.chdir(original_cwd)
+
+        super().run()
+
 
 setuptools.setup(
     name="GraphGenerator",
@@ -14,4 +33,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
+    cmdclass={
+        'develop': CustomDevelop
+    }
 )

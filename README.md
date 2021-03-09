@@ -4,13 +4,13 @@ Toolkit for generating graphs and evaluating graph generators.
 ## Installation
 ### Requirements
 - CentOS==7.5
-- CUDA==11.0
+- CUDA==11.1
 - Python==3.6.8
-- PyTorch==1.7.1
+- PyTorch==1.8.0
 
 **1. Install Pytorch**
 ```bash
-pip install torch==1.7.1+cu110 torchvision==0.8.2+cu110 torchaudio===0.7.2 -f https://download.pytorch.org/whl/torch_stable.html
+pip install torch==1.8.0+cu111 torchvision==0.9.0+cu111 torchaudio==0.8.0 -f https://download.pytorch.org/whl/torch_stable.html
 ```
 **2. Clone and install**
 ```bash
