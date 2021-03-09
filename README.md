@@ -2,7 +2,7 @@
 Toolkit for generating graphs and evaluating graph generators.
 
 ## Installation
-### Requirements
+### Environments
 - CentOS==7.5
 - CUDA==11.1
 - Python==3.6.8
@@ -19,9 +19,32 @@ cd GraphGenerator
 pip install -r requirements.txt
 pip install -e .
 ```
-**3. Test the installation**
-```bash
-bash run_test.sh
+
+### Project organization
+
+Please organize this project according to following structure:
+
+```
+GraphGenerator/
+|___GraphGenerator/  # source code
+|   |___models # graph generator implementations
+|   |___...
+|
+|___setup.py 
+|
+|___config/  # detailed configurations of complex models
+|   |___graphite.yaml
+|   |___...
+|
+|___data/  # raw data / cooked data
+|   |___google.txt
+|   |___...
+|
+|___exp # trained model and generated graphs
+|   |___VGAE/
+|   |___...
+|
+|...
 ```
 
 ## GraphGenerator Usage
