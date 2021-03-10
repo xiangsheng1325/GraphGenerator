@@ -27,7 +27,16 @@ Please organize this project according to following structure:
 ```
 GraphGenerator/
 |___GraphGenerator/  # source code
-|   |___models # graph generator implementations
+|   |___models/ # graph generator implementations
+|   |   |___bigg/
+|   |   |   |___tree_model.py
+|   |   |   |___...
+|   |   |___sbm.py
+|   |   |___...
+|   |___metrics/
+|   |   |___mmd.py
+|   |   |___...
+|   |___train.py
 |   |___...
 |
 |___setup.py 
@@ -44,7 +53,7 @@ GraphGenerator/
 |   |___VGAE/
 |   |___...
 |
-|...
+|___...
 ```
 
 ## GraphGenerator Usage
