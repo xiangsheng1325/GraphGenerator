@@ -1,7 +1,6 @@
-from .test_bigg import bigg_test
+from .test_bigg import bigg_test as bigg
 
 
-def test_package(args):
-    if args.generator == 'bigg':
-        bigg_test(args)
+def test_generator(args):
+    eval(args.generator)(args)
     return
