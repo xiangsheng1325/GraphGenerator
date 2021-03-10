@@ -29,7 +29,7 @@ if __name__ == '__main__':
     parser.add_argument("-o", "--output", help="Specify the path of output file.", default=None)
     parser.add_argument("-c", "--config", help="Specify the path of config file.", default=None)
     parser.add_argument("-g", "--generator", help="choose the generator. Example:```-g sbm```", default="vgae",
-                        choices=["sbm", "dcsbm", "vgae", "bigg"])
+                        choices=["sbm", "dcsbm", "vgae", "graphite", "bigg"])
     parser.add_argument("-e", "--evaluate", help="choose the evaluating metrics.", default=None)
     parser.add_argument("-r", "--ref", help="Path of referenced graphs(Only required in evaluate phase)", default=None)
     args = parser.parse_args()

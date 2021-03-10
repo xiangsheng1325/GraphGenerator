@@ -96,7 +96,7 @@ def topk_adj(adj, k):
     return res
 
 
-def test_autoencoder(sp_adj, feature, config, model, repeat=1):
+def infer_autoencoder(sp_adj, feature, config, model, repeat=1):
     generated_graphs = []
     with torch.no_grad():
         adj_normalized = sp_normalize(sp_adj, config.device)
@@ -123,6 +123,7 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
         graphs = sbm.generate(input_data, generator, repeat)
     elif generator in ['vgae', 'graphite']:
         sp_adj = nx.adjacency_matrix(input_data).astype(np.float32)
+        # print("Shape!", sp_adj.shape)
         feature = coo_to_csp(sp.diags(np.array([1. for i in range(sp_adj.shape[0])],
                                                 dtype=np.float32)).tocoo()).to(config.device)
         if config.model.variational:
@@ -159,7 +160,7 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
                 sys.exit(1)
         optimizer = optim.Adam(model.parameters(), lr=config.train.lr)
         model = train_autoencoder(sp_adj, feature, config, model, optimizer)
-        graphs = test_autoencoder(sp_adj, feature, config, model, repeat=repeat)
+        graphs = infer_autoencoder(sp_adj, feature, config, model, repeat=repeat)
     else:
         print("Wrong generator name! Process exit..")
         sys.exit(1)
