@@ -1,23 +1,22 @@
 import argparse, sys, pickle, warnings, os
 warnings.filterwarnings("ignore")
 from GraphGenerator.metrics import mmd
-from GraphGenerator.test import test_package
+from GraphGenerator.test import test_generator
 from GraphGenerator import train
 from GraphGenerator.preprocessing import dataio, utils
 from GraphGenerator.utils.arg_utils import get_config
 import pandas as pd
 
 
-
 def print_variables(vdict, name="args"):
-    print("┌---------------------------------------")
+    print("-----------------------------------------")
     print("|This is the summary of {}:".format(name))
     var = vdict
     for i in var:
         if var[i] is None:
             continue
         print("|{:11}\t: {}".format(i, var[i]))
-    print("└---------------------------------------")
+    print("-----------------------------------------")
 
 
 if __name__ == '__main__':
@@ -30,7 +29,7 @@ if __name__ == '__main__':
     parser.add_argument("-o", "--output", help="Specify the path of output file.", default=None)
     parser.add_argument("-c", "--config", help="Specify the path of config file.", default=None)
     parser.add_argument("-g", "--generator", help="choose the generator. Example:```-g sbm```", default="vgae",
-                        choices=["sbm", "dcsbm", "vgae"])
+                        choices=["sbm", "dcsbm", "vgae", "bigg"])
     parser.add_argument("-e", "--evaluate", help="choose the evaluating metrics.", default=None)
     parser.add_argument("-r", "--ref", help="Path of referenced graphs(Only required in evaluate phase)", default=None)
     args = parser.parse_args()
@@ -87,7 +86,7 @@ if __name__ == '__main__':
         tmp_pd.to_csv(output_name)
     elif args.phase == 'test':
         print("Start test the package...")
-        test_package(args)
+        test_generator(args)
         print("Test finished.")
     print("Done!")
     sys.exit(0)

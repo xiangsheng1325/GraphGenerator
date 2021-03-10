@@ -95,14 +95,14 @@ class FenwickTree(nn.Module):
     def __init__(self, args):
         super(FenwickTree, self).__init__()
 
-        self.init_h0 = Parameter(torch.Tensor(1, args.embed_dim))
-        self.init_c0 = Parameter(torch.Tensor(1, args.embed_dim))
+        self.init_h0 = Parameter(torch.Tensor(1, args.model.embed_dim))
+        self.init_c0 = Parameter(torch.Tensor(1, args.model.embed_dim))
         glorot_uniform(self)
 
-        self.merge_cell = BinaryTreeLSTMCell(args.embed_dim)
-        self.summary_cell = BinaryTreeLSTMCell(args.embed_dim)
-        if args.pos_enc:
-            self.pos_enc = PosEncoding(args.embed_dim, args.device, args.pos_base)
+        self.merge_cell = BinaryTreeLSTMCell(args.model.embed_dim)
+        self.summary_cell = BinaryTreeLSTMCell(args.model.embed_dim)
+        if args.model.pos_enc:
+            self.pos_enc = PosEncoding(args.model.embed_dim, args.device, args.model.pos_base)
         else:
             self.pos_enc = lambda x: 0
 
@@ -201,8 +201,8 @@ class FenwickTree(nn.Module):
 class BitsRepNet(nn.Module):
     def __init__(self, args):
         super(BitsRepNet, self).__init__()
-        self.bits_compress = args.bits_compress
-        self.out_dim = args.embed_dim
+        self.bits_compress = args.model.bits_compress
+        self.out_dim = args.model.embed_dim
         assert self.out_dim >= self.bits_compress
         self.device = args.device
 
@@ -218,37 +218,37 @@ class RecurTreeGen(nn.Module):
     def __init__(self, args):
         super(RecurTreeGen, self).__init__()
 
-        self.directed = args.directed
-        self.self_loop = args.self_loop
-        self.bits_compress = args.bits_compress
-        self.greedy_frac = args.greedy_frac
-        self.share_param = args.share_param
+        self.directed = args.dataset.directed
+        self.self_loop = args.dataset.self_loop
+        self.bits_compress = args.model.bits_compress
+        self.greedy_frac = args.model.greedy_frac
+        self.share_param = args.model.share_param
         if not self.bits_compress:
-            self.leaf_h0 = Parameter(torch.Tensor(1, args.embed_dim))
-            self.leaf_c0 = Parameter(torch.Tensor(1, args.embed_dim))
-            self.empty_h0 = Parameter(torch.Tensor(1, args.embed_dim))
-            self.empty_c0 = Parameter(torch.Tensor(1, args.embed_dim))
+            self.leaf_h0 = Parameter(torch.Tensor(1, args.model.embed_dim))
+            self.leaf_c0 = Parameter(torch.Tensor(1, args.model.embed_dim))
+            self.empty_h0 = Parameter(torch.Tensor(1, args.model.embed_dim))
+            self.empty_c0 = Parameter(torch.Tensor(1, args.model.embed_dim))
 
-        self.topdown_left_embed = Parameter(torch.Tensor(2, args.embed_dim))
-        self.topdown_right_embed = Parameter(torch.Tensor(2, args.embed_dim))
+        self.topdown_left_embed = Parameter(torch.Tensor(2, args.model.embed_dim))
+        self.topdown_right_embed = Parameter(torch.Tensor(2, args.model.embed_dim))
         glorot_uniform(self)
 
         if self.bits_compress > 0:
             self.bit_rep_net = BitsRepNet(args)
 
         if self.share_param:
-            self.m_l2r_cell = BinaryTreeLSTMCell(args.embed_dim)
-            self.lr2p_cell = BinaryTreeLSTMCell(args.embed_dim)
-            self.pred_has_ch = MLP(args.embed_dim, [2 * args.embed_dim, 1])
-            self.m_pred_has_left = MLP(args.embed_dim, [2 * args.embed_dim, 1])
-            self.m_pred_has_right = MLP(args.embed_dim, [2 * args.embed_dim, 1])
-            self.m_cell_topdown = nn.LSTMCell(args.embed_dim, args.embed_dim)
-            self.m_cell_topright = nn.LSTMCell(args.embed_dim, args.embed_dim)
+            self.m_l2r_cell = BinaryTreeLSTMCell(args.model.embed_dim)
+            self.lr2p_cell = BinaryTreeLSTMCell(args.model.embed_dim)
+            self.pred_has_ch = MLP(args.model.embed_dim, [2 * args.model.embed_dim, 1])
+            self.m_pred_has_left = MLP(args.model.embed_dim, [2 * args.model.embed_dim, 1])
+            self.m_pred_has_right = MLP(args.model.embed_dim, [2 * args.model.embed_dim, 1])
+            self.m_cell_topdown = nn.LSTMCell(args.model.embed_dim, args.model.embed_dim)
+            self.m_cell_topright = nn.LSTMCell(args.model.embed_dim, args.model.embed_dim)
         else:
-            fn_pred = lambda: MLP(args.embed_dim, [2 * args.embed_dim, 1])
-            fn_tree_cell = lambda: BinaryTreeLSTMCell(args.embed_dim)
-            fn_lstm_cell = lambda: nn.LSTMCell(args.embed_dim, args.embed_dim)
-            num_params = int(np.ceil(np.log2(args.max_num_nodes))) + 1
+            fn_pred = lambda: MLP(args.model.embed_dim, [2 * args.model.embed_dim, 1])
+            fn_tree_cell = lambda: BinaryTreeLSTMCell(args.model.embed_dim)
+            fn_lstm_cell = lambda: nn.LSTMCell(args.model.embed_dim, args.model.embed_dim)
+            num_params = int(np.ceil(np.log2(args.model.max_num_nodes))) + 1
             self.pred_has_ch = fn_pred()
 
             pred_modules = [[] for _ in range(2)]
@@ -266,8 +266,8 @@ class RecurTreeGen(nn.Module):
             self.lr2p_cell = fn_tree_cell()
         self.row_tree = FenwickTree(args)
 
-        if args.tree_pos_enc:
-            self.tree_pos_enc = PosEncoding(args.embed_dim, args.device, args.pos_base, bias=np.pi / 4)
+        if args.model.tree_pos_enc:
+            self.tree_pos_enc = PosEncoding(args.model.embed_dim, args.device, args.model.pos_base, bias=np.pi / 4)
         else:
             self.tree_pos_enc = lambda x: 0
 

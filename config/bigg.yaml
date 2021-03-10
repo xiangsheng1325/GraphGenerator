@@ -1,9 +1,9 @@
 ---
 exp_name: BiGG
 exp_dir: exp/BiGG
-device: cuda:0
-gpu: 1
-#device: cpu
+#device: cuda:0
+device: cpu
+gpu: -1
 seed: 1234
 dataset:
   name: top10
@@ -17,13 +17,15 @@ model:
   embed_dim: 256
   num_RNN_layers: 2
   bits_compress: 256
-  position_encoding: true
-  position_base: 10000
+  tree_pos_enc: false
+  pos_enc: true
+  pos_base: 10000
+  greedy_frac: 0.0
   share_param: true
   blksize: -1
 train:
   optimizer: Adam
-  lr: 1.0e-2
+  lr: 3.0e-4
   gradient_clip: 5
   max_epochs: 1000
   display_iter: 10

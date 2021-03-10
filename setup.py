@@ -1,5 +1,7 @@
+import setuptools
 from setuptools.command.develop import develop
-import setuptools, os, subprocess
+import os
+import subprocess
 BASEPATH = os.path.dirname(os.path.abspath(__file__))
 
 

@@ -67,10 +67,10 @@ class _tree_lib(object):
         self.lib.NumLeftBot.restype = ctypes.c_int
         self.lib.GetNumNextStates.restype = ctypes.c_int
 
-        args = 'this -bits_compress %d -embed_dim %d -gpu %d -bfs_permute %d -seed %d' % (config.mode.bits_compress,
+        args = 'this -bits_compress %d -embed_dim %d -gpu %d -bfs_permute %d -seed %d' % (config.model.bits_compress,
                                                                                           config.model.embed_dim,
                                                                                           config.gpu,
-                                                                                          config.model.bfs_permute,
+                                                                                          config.dataset.bfs_permute,
                                                                                           config.seed)
         args = args.split()
         if sys.version_info[0] > 2:
@@ -173,7 +173,7 @@ class _tree_lib(object):
             if num_nodes == 0:
                 all_bin_feats.append(base_feat)
             else:
-                if self.device == torch.device('cpu'):
+                if self.device == torch.device('cpu') or self.device == 'cpu':
                     feat = torch.zeros(num_nodes + 2, self.embed_dim)
                     dev = 0
                 else:

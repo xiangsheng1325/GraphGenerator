@@ -42,10 +42,9 @@ def mkdir(folder):
     os.makedirs(folder)
 
 
-def set_device(gpu, config):
-    if torch.cuda.is_available() and gpu >= 0:
-        config.gpu = gpu
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
+def set_device(config):
+    if torch.cuda.is_available() and config.gpu >= 0:
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(config.gpu)
         config.device = 'cuda:0'
         # print('use gpu indexed: %d' % gpu)
     else:

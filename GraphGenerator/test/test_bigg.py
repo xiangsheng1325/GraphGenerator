@@ -15,7 +15,7 @@ def bigg_test(args):
     random.seed(config.seed)
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
-    set_device(config.gpu)
+    set_device(config)
     setup_treelib(config)
 
     train_graphs = [nx.barabasi_albert_graph(10, 2)]
@@ -24,7 +24,7 @@ def bigg_test(args):
     config.model.max_num_nodes = max_num_nodes
 
     model = RecurTreeGen(config).to(config.device)
-    optimizer = optim.Adam(model.parameters(), lr=config.learning_rate, weight_decay=1e-4)
+    optimizer = optim.Adam(model.parameters(), lr=config.train.lr, weight_decay=1e-4)
     for i in range(2):
         optimizer.zero_grad()
         ll, _ = model.forward_train([0])
