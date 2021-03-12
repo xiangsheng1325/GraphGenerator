@@ -2,6 +2,7 @@ import scipy.sparse as sp
 import GraphGenerator.models.sbm as sbm
 import GraphGenerator.models.vgae as vgae
 import GraphGenerator.models.graphite as graphite
+import GraphGenerator.models.bigg.batch_train as bigg
 import networkx as nx
 import torch.optim as optim
 import torch.nn.functional as F
@@ -112,7 +113,7 @@ def infer_autoencoder(sp_adj, feature, config, model, repeat=1):
 def train_and_inference(input_data, generator, config=None, repeat=1):
     """
     train model using input graph, and infer new graphs
-    :param input_data: graph object, whose type is networkx.Graph
+    :param input_data: graph object, whose type is networkx.Graph or list of nx.Graph
     :param generator: name of graph generator
     :param config: configuration of graph generator
     :param repeat: number of new graphs
@@ -126,41 +127,37 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
         # print("Shape!", sp_adj.shape)
         feature = coo_to_csp(sp.diags(np.array([1. for i in range(sp_adj.shape[0])],
                                                 dtype=np.float32)).tocoo()).to(config.device)
-        if config.model.variational:
-            if generator == 'vgae':
-                model = vgae.VGAE(config.model.num_nodes,
-                                  config.model.embedding_dim,
-                                  config.model.hidden_dim,
-                                  act=F.relu,
-                                  layers=config.model.num_GNN_layers).to(config.device)
-            elif generator == 'graphite':
-                model = graphite.GraphiteVAE(config.model.num_nodes,
-                                             config.model.hidden_dim,
-                                             config.model.embedding_dim,
-                                             config.model.decoding_dim,
-                                             act=F.relu).to(config.device)
+        if generator == 'vgae':
+            if config.model.variational:
+                model_name = "{}.{}".format(generator, "VGAE")
             else:
-                model = None
-                sys.exit(1)
+                model_name = "{}.{}".format(generator, "GAE")
+            model = eval(model_name)(config.model.num_nodes,
+                                     config.model.embedding_dim,
+                                     config.model.hidden_dim,
+                                     act=F.relu,
+                                     layers=config.model.num_GNN_layers).to(config.device)
+        elif generator == 'graphite':
+            if config.model.variational:
+                model_name = "{}.{}".format(generator, "GraphiteVAE")
+            else:
+                model_name = "{}.{}".format(generator, "GraphiteAE")
+            model = eval(model_name)(config.model.num_nodes,
+                                     config.model.hidden_dim,
+                                     config.model.embedding_dim,
+                                     config.model.decoding_dim,
+                                     act=F.relu).to(config.device)
         else:
-            if generator == 'vgae':
-                model = vgae.GAE(config.model.num_nodes,
-                                 config.model.embedding_dim,
-                                 config.model.hidden_dim,
-                                 act=F.relu,
-                                 layers=config.model.num_GNN_layers).to(config.device)
-            elif generator == 'graphite':
-                model = graphite.GraphiteAE(config.model.num_nodes,
-                                            config.model.hidden_dim,
-                                            config.model.embedding_dim,
-                                            config.model.decoding_dim,
-                                            act=F.relu).to(config.device)
-            else:
-                model = None
-                sys.exit(1)
+            model = None
+            sys.exit(1)
         optimizer = optim.Adam(model.parameters(), lr=config.train.lr)
         model = train_autoencoder(sp_adj, feature, config, model, optimizer)
         graphs = infer_autoencoder(sp_adj, feature, config, model, repeat=repeat)
+    elif generator in ['bigg']:
+        if isinstance(input_data, nx.Graph):
+            input_data = [input_data]
+        trained_model = bigg.train_bigg(input_data, config)
+        graphs = bigg.infer_bigg(input_data, config, trained_model)
     else:
         print("Wrong generator name! Process exit..")
         sys.exit(1)

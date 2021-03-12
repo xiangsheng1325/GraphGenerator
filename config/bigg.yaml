@@ -24,12 +24,21 @@ model:
   share_param: true
   blksize: -1
 train:
+  batch_size: 32
   optimizer: Adam
   lr: 3.0e-4
   gradient_clip: 5
+  accum_grad: 1
   max_epochs: 1000
   display_iter: 10
   snapshot_epoch: 1000
-#test:
-#  test_model_dir: exp/VGAE/VGAE_cora_2021-Feb-25-10-38-59_12345
-#  test_model_name: model_snapshot_0001000.pth
+  resume: false
+  resume_epoch: null
+  resume_model_dir: exp/BiGG/BiGG_cora_2021-Feb-25-10-38-59_12345
+  resume_model_name: epoch-1000.ckpt
+test:
+  num_test_gen: 10
+  display: false
+  load_snapshot: false
+  test_model_dir: exp/BiGG/BiGG_cora_2021-Feb-25-10-38-59_12345
+  test_model_name: epoch-1000.ckpt
