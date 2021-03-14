@@ -14,9 +14,9 @@ from GraphGenerator.models.bigg.tree_model import RecurTreeGen
 
 
 def get_node_dist(graphs):
-  num_node_dist = np.bincount([len(gg.nodes) for gg in graphs])
-  num_node_dist = num_node_dist / np.sum(num_node_dist)
-  return num_node_dist
+    num_node_dist = np.bincount([len(gg.nodes) for gg in graphs])
+    num_node_dist = num_node_dist / np.sum(num_node_dist)
+    return num_node_dist
 
 
 def sqrtn_forward_backward(model,
