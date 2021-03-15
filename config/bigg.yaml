@@ -27,7 +27,7 @@ train:
   batch_size: 32
   optimizer: Adam
   lr: 3.0e-4
-  gradient_clip: 5
+  grad_clip: 5
   accum_grad: 1
   max_epochs: 1000
   display_iter: 10

@@ -75,12 +75,14 @@ def sqrtn_forward_backward(model,
 
 
 def train_bigg(train_graphs, config):
+    print("### Type:", type(train_graphs))
     random.seed(config.seed)
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
-    set_device(config.gpu)
+    set_device(config)
     setup_treelib(config)
-
+    for g in train_graphs:
+        TreeLib.InsertGraph(g)
     max_num_nodes = max([len(gg.nodes) for gg in train_graphs])
     config.model.max_num_nodes = max_num_nodes
 
@@ -132,9 +134,10 @@ def infer_bigg(test_graphs, config, model=None):
     random.seed(config.seed)
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
-    set_device(config.gpu)
+    set_device(config)
     setup_treelib(config)
-
+    for g in test_graphs:
+        TreeLib.InsertGraph(g)
     max_num_nodes = max([len(gg.nodes) for gg in test_graphs])
     config.model.max_num_nodes = max_num_nodes
     if model is None:
