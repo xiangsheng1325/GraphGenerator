@@ -75,7 +75,7 @@ def sqrtn_forward_backward(model,
 
 
 def train_bigg(train_graphs, config):
-    print("### Type:", type(train_graphs))
+    # print("### Type:", type(train_graphs))
     random.seed(config.seed)
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
@@ -136,12 +136,12 @@ def infer_bigg(test_graphs, config, model=None):
     np.random.seed(config.seed)
     set_device(config)
     setup_treelib(config)
-    for g in test_graphs:
-        TreeLib.InsertGraph(g)
     max_num_nodes = max([len(gg.nodes) for gg in test_graphs])
     config.model.max_num_nodes = max_num_nodes
     if model is None:
         model = RecurTreeGen(config).to(config.device)
+        for g in test_graphs:
+            TreeLib.InsertGraph(g)
     test_model_path = os.path.join(config.test.test_model_dir,
                                    config.test.test_model_name)
     if config.test.load_snapshot and os.path.isfile(config.test.test_model_dir):
@@ -160,9 +160,9 @@ def infer_bigg(test_graphs, config, model=None):
             pred_g = nx.Graph()
             pred_g.add_edges_from(pred_edges)
             gen_graphs.append(pred_g)
-    print('saving graphs')
-    with open(test_model_path + '.graphs-%s' % str(config.greedy_frac), 'wb') as f:
-        cp.dump(gen_graphs, f, cp.HIGHEST_PROTOCOL)
-    print('evaluating')
+    # print('saving graphs')
+    # with open(test_model_path + '.graphs-%s' % str(config.test.greedy_frac), 'wb') as f:
+    #     cp.dump(gen_graphs, f, cp.HIGHEST_PROTOCOL)
+    # print('evaluating')
     return gen_graphs
     # sys.exit(0)

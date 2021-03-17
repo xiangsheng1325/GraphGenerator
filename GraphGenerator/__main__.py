@@ -26,7 +26,7 @@ if __name__ == '__main__':
                         choices=["preprocessing", "train", "evaluate", "test"],
                         required=True)
     parser.add_argument("-i", "--input", help="Path of input file. Example:```-i google.txt```", default=None)
-    parser.add_argument("-o", "--output", help="Specify the path of output file.", default=None)
+    parser.add_argument("-o", "--output", help="Specify the name of output file.", default=None)
     parser.add_argument("-c", "--config", help="Specify the path of config file.", default=None)
     parser.add_argument("-g", "--generator", help="choose the generator. Example:```-g sbm```", default="vgae",
                         choices=["sbm", "dcsbm", "vgae", "graphite", "bigg"])
@@ -69,10 +69,10 @@ if __name__ == '__main__':
                 output_data.append(tmp_data)
         print("Start saving generated graphs...")
         if args.output is None:
-            output_name = "{}_to_{}.graphs".format(args.input, args.generator)
+            output_name = "{}_to_{}.graphs".format(config.dataset.name, args.generator)
         else:
             output_name = args.output
-        dataio.save_data(output_data, name=output_name)
+        dataio.save_data(output_data, name=os.path.join(config.exp_dir, config.exp_name, output_name))
     elif args.phase == 'evaluate':
         print("Start evaluating the generated graphs...")
         graphs_ref = dataio.load_data(args.ref)
@@ -89,4 +89,4 @@ if __name__ == '__main__':
         test_generator(args)
         print("Test finished.")
     print("Done!")
-    sys.exit(0)
+    # sys.exit(0)

@@ -113,7 +113,7 @@ def infer_autoencoder(sp_adj, feature, config, model, repeat=1):
 def train_and_inference(input_data, generator, config=None, repeat=1):
     """
     train model using input graph, and infer new graphs
-    :param input_data: graph object, whose type is networkx.Graph or list of nx.Graph
+    :param input_data: input graph(s), whose type is networkx.Graph or list of nx.Graph
     :param generator: name of graph generator
     :param config: configuration of graph generator
     :param repeat: number of new graphs
