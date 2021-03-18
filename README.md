@@ -1,11 +1,7 @@
-
-
-## Dependencies
-
 # GraphGenerator
 <a href="https://github.com/xiangsheng1325/GraphGenerator/graphs/contributors" alt="Contributors">
         <img src="https://img.shields.io/github/contributors/xiangsheng1325/GraphGenerator?style=plastic" /></a>
-    
+        
 <a href="https://github.com/xiangsheng1325/GraphGenerator/pulse" alt="Activity">
         <img src="https://img.shields.io/github/commit-activity/m/xiangsheng1325/GraphGenerator?style=plastic" /></a>
 
