@@ -39,13 +39,13 @@ def generate(input_graph, config):
     sparse_adj = nx.adjacency_matrix(input_graph)
     k = int(np.log2(sparse_adj.shape[0])) + 1
     init_mat = np.array([[.5625, .1875], [.1875, .0625]])
-    if config.generator != 'rmat':
+    if config.exp_name == 'Kronecker':
         tmp_name = "./data/cit_{}.txt".format(config.dataset.name)
         data_utils.adj_to_edgelist(sparse_adj, tmp_name)
         sp_output = subprocess.check_output(
             args=["./GraphGenerator/models/kronecker_ops/examples/kronfit/kronfit",
                   "-i:{}".format(tmp_name),
-                  '-m:"0.9 0.6; 0.6 0.1"',
+                  '-m:"{}"'.format(config.model.init_mat),
                   "-o:./{}/{}/{}_to_kronfit.log".format(config.exp_dir, config.exp_name, config.dataset.name),
                   "-gi:100", "-n0:2"]
         )
@@ -54,9 +54,9 @@ def generate(input_graph, config):
         output = utf_output[utf_output.find(START_STR):]
         init_mat = str_to_float(output)
         # dump_graphs(args.dataset, 'kronecker', init_mat, k)
-    if config.generator != 'kronecker':
+    if config.exp_name == 'RMAT':
         edge_num = sparse_adj.sum()/2.
         tmp = np.float_power(edge_num, 1/k)
         init_mat = init_mat*tmp
         # dump_graphs(args.dataset, 'rmat', init_mat, k)
-    return krongen(init_mat, k)
+    return [krongen(init_mat, k) for i in range(config.num_gen)]

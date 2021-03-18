@@ -1,0 +1,11 @@
+---
+exp_name: Kronecker
+exp_dir: exp/Kronecker
+seed: 1234
+dataset:
+  name: top10
+  data_path: data/
+model:
+  name: Kronecker
+  init_mat: 0.9 0.6 0.6 0.1
+num_gen: 10
