@@ -1,0 +1,9 @@
+---
+exp_name: DCSBM
+exp_dir: exp/DCSBM
+seed: 1234
+dataset:
+  name: top10
+  data_path: data/
+model:
+  name: DCSBM

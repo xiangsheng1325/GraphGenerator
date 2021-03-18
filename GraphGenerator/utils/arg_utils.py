@@ -1,4 +1,5 @@
-import time, os, yaml, torch
+import time, os, yaml, torch, random
+import numpy as np
 from easydict import EasyDict as edict
 
 
@@ -6,7 +7,9 @@ def get_config(config_file):
     """ Construct and snapshot hyper parameters """
     # config = edict(yaml.load(open(config_file, 'r'), Loader=yaml.FullLoader))
     config = edict(yaml.load(open(config_file, 'r')))
-
+    if config.seed is not None:
+        np.random.seed(config.seed)
+        random.seed(config.seed)
     # create hyper parameters
     config.run_id = str(os.getpid())
     config.exp_name = '_'.join([

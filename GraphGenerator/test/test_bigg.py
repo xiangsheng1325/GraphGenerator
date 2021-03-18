@@ -6,8 +6,8 @@ import numpy as np
 import random
 import networkx as nx
 from GraphGenerator.utils.arg_utils import get_config, set_device
-from GraphGenerator.models.bigg.tree_clib.tree_lib import setup_treelib, TreeLib
-from GraphGenerator.models.bigg.tree_model import RecurTreeGen
+from GraphGenerator.models.bigg_ops.tree_clib.tree_lib import setup_treelib, TreeLib
+from GraphGenerator.models.bigg_ops.tree_model import RecurTreeGen
 
 
 def bigg_test(args):

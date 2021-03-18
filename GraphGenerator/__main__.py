@@ -49,7 +49,8 @@ if __name__ == '__main__':
     elif args.phase == 'train':
         print("Start loading data...")
         input_data = dataio.load_data(args.input)
-        # args.config = "config/vgae.yaml"
+        if args.config is None:
+            args.config = "config/{}.yaml".format(args.generator)
         config = get_config(args.config)
         os.environ["CUDA_VISIBLE_DEVICES"] = str(config.gpu)
         print("Start (training and) inferencing graph...")

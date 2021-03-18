@@ -24,15 +24,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 from collections import defaultdict
 from torch.nn.parameter import Parameter
-from GraphGenerator.models.bigg.util import (glorot_uniform,
-                                             MLP,
-                                             BinaryTreeLSTMCell,
-                                             AdjNode,
-                                             ColAutomata,
-                                             AdjRow)
+from GraphGenerator.models.bigg_ops.util import (glorot_uniform,
+                                                 MLP,
+                                                 BinaryTreeLSTMCell,
+                                                 AdjNode,
+                                                 ColAutomata,
+                                                 AdjRow)
 from tqdm import tqdm
-from GraphGenerator.models.bigg.tree_clib.tree_lib import TreeLib
-from GraphGenerator.models.bigg.tensor_ops import multi_index_select, PosEncoding
+from GraphGenerator.models.bigg_ops.tree_clib.tree_lib import TreeLib
+from GraphGenerator.models.bigg_ops.tensor_ops import multi_index_select, PosEncoding
 
 
 def hc_multi_select(ids_from, ids_to, h_froms, c_froms):

@@ -10,7 +10,8 @@ class CustomDevelop(develop):
         original_cwd = os.getcwd()
 
         folders = [
-            os.path.join(BASEPATH, 'GraphGenerator/models/bigg/tree_clib'),
+            os.path.join(BASEPATH, 'GraphGenerator/models/bigg_ops/tree_clib'),
+            os.path.join(BASEPATH, 'GraphGenerator/models/kronfit')
         ]
         for folder in folders:
             os.chdir(folder)

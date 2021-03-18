@@ -1,0 +1,9 @@
+---
+exp_name: SBM
+exp_dir: exp/SBM
+seed: 1234
+dataset:
+  name: top10
+  data_path: data/
+model:
+  name: SBM

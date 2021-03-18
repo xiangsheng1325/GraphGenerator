@@ -9,8 +9,8 @@ import torch, torch.cuda
 import torch.optim as optim
 from collections import OrderedDict
 from GraphGenerator.utils.arg_utils import get_config, set_device
-from GraphGenerator.models.bigg.tree_clib.tree_lib import setup_treelib, TreeLib
-from GraphGenerator.models.bigg.tree_model import RecurTreeGen
+from GraphGenerator.models.bigg_ops.tree_clib.tree_lib import setup_treelib, TreeLib
+from GraphGenerator.models.bigg_ops.tree_model import RecurTreeGen
 
 
 def get_node_dist(graphs):
