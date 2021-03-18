@@ -46,7 +46,7 @@ def set_device(config):
     if torch.cuda.is_available() and config.gpu >= 0 and config.device == 'cuda:0':
         os.environ["CUDA_VISIBLE_DEVICES"] = str(config.gpu)
         # config.device = 'cuda:0'
-        print('use gpu indexed: %d' % gpu)
+        print('use gpu indexed: %d' % config.gpu)
     else:
         config.gpu = -1
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
