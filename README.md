@@ -1,12 +1,21 @@
+
+
+## Dependencies
+
 # GraphGenerator
+<a href="https://github.com/xiangsheng1325/GraphGenerator/graphs/contributors" alt="Contributors">
+        <img src="https://img.shields.io/github/contributors/xiangsheng1325/GraphGenerator?style=plastic" /></a>
+    
+<a href="https://github.com/xiangsheng1325/GraphGenerator/pulse" alt="Activity">
+        <img src="https://img.shields.io/github/commit-activity/m/xiangsheng1325/GraphGenerator?style=plastic" /></a>
+
 Toolkit for generating graphs and evaluating graph generators.
 
 ## Installation
 ### Environments
-- CentOS==7.5
-- CUDA==11.1
-- Python==3.6.8
-- PyTorch==1.8.0
+[![Python](https://img.shields.io/badge/Python-v3.6-blue?style=plastic)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-v1.8.0-red?style=plastic)](https://pypi.org/project/torch/)
+
 
 **1. Install Pytorch**
 ```bash
