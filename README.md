@@ -5,7 +5,8 @@
 <a href="https://github.com/xiangsheng1325/GraphGenerator/pulse" alt="Activity">
         <img src="https://img.shields.io/github/commit-activity/m/xiangsheng1325/GraphGenerator?style=plastic" /></a>
 
-<img src="https://img.shields.io/github/languages/code-size/xiangsheng1325/GraphGenerator?style=plastic">
+<a href="https://github.com/xiangsheng1325/GraphGenerator">
+        <img src="https://img.shields.io/github/languages/code-size/xiangsheng1325/GraphGenerator?style=plastic"></a>
 
 Toolkit for generating graphs and evaluating graph generators.
 
