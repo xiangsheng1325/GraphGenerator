@@ -1,5 +1,8 @@
 import scipy.sparse as sp
 import GraphGenerator.models.kronecker as kronecker
+import GraphGenerator.models.er as er
+import GraphGenerator.models.ws as ws
+import GraphGenerator.models.ba as ba
 import GraphGenerator.models.sbm as sbm
 import GraphGenerator.models.bigg as bigg
 import networkx as nx
@@ -118,8 +121,12 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
     :param repeat: number of new graphs
     :return: generated graphs
     """
-    graphs = []
-    if generator in ['sbm', 'dcsbm']:
+    # graphs = []
+    if generator in ['E-R', 'W-S', 'B-A']:
+        tmp_name = generator.lower()
+        model_name = "{}.{}".format(tmp_name.replace('-', ''), tmp_name.replace('-', '_'))
+        graphs = eval(model_name)(input_data, config)
+    elif generator in ['sbm', 'dcsbm']:
         graphs = sbm.generate(input_data, generator, repeat)
     elif generator in ['rmat', 'kronecker']:
         graphs = kronecker.generate(input_data, config)
@@ -149,7 +156,7 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
                                      config.model.decoding_dim,
                                      act=F.relu).to(config.device)
         else:
-            model = None
+            # model = None
             sys.exit(1)
         optimizer = optim.Adam(model.parameters(), lr=config.train.lr)
         model = train_autoencoder(sp_adj, feature, config, model, optimizer)

@@ -50,47 +50,30 @@ def generator_optimization(graph, generator='W-S'):
     graph_node = graph.number_of_nodes()
     graph_edge = graph.number_of_edges()
     k = round(graph_edge/graph_node) + 1
-    parameter_temp = 1
+    p_selected = 1.
     print('graph with {} nodes'.format(graph_node))
     n = graph_node
     if generator == 'W-S':
-        pool = mp.Pool(processes=4)
         #loss_all = []
         #parameter_all = []
-        args_all = [(1e-6, 1, 0.01, n, graph, generator, k, 1) for k in range(2, 10, 2)]
-        results = [pool.apply_async(grid_search, args=args) for args in args_all]
-        output = [p.get() for p in results]
-        parameter_all = [o[0] for o in output]
-        loss_all = [o[1] for o in output]
-        #for k in range(2, n+1, 2):
-        #    p, tmp_loss = grid_search(1e-6, 1, 0.01, n, graph, generator, k=k)
-        #    parameter_all.append([k, p])
-        #    loss_all.append(tmp_loss)
-        k = np.argmin(np.array(loss_all))
-        parameter_temp = parameter_all[int(k)]
-        parameter_temp = (n, (k+1)*2, parameter_temp)
-    return parameter_temp
+        p_selected, _ = grid_search(1e-6, 1, 0.01, n, graph, generator, k, 10)
+    return n, k, p_selected
 
-def generate_new_graph(parameter, generator, repeat=1):
+
+def generate_new_graph(parameters, generator, repeat=1):
     graph_list = []
     for i in range(repeat):
         if generator == 'W-S':
-            graph_list.append(nx.watts_strogatz_graph(*parameter))
+            graph_list.append(nx.watts_strogatz_graph(*parameters))
     return graph_list
 
 
 def w_s(in_graph, config):
     """
-        W-S graph generator
-        :param in_graph: referenced graph, type: nx.Graph
-        :param config: configure object
-        :return: generated graphs, type: list of nx.Graph
-        """
-    num_edges = in_graph.number_of_edges()
-    num_nodes = in_graph.number_of_nodes()
-    p = num_edges / (num_nodes * (num_nodes - 1) / 2)
-    out_graphs = []
-    for i in range(config.num_gen):
-        out_graph = nx.fast_gnp_random_graph(num_nodes, p)
-        out_graphs.append(out_graph)
-    return out_graphs
+    W-S graph generator
+    :param in_graph: referenced graph, type: nx.Graph
+    :param config: configure object
+    :return: generated graphs, type: list of nx.Graph
+    """
+    parameters = generator_optimization(in_graph, config.model.name)
+    return generate_new_graph(parameters, config.model.name, repeat=config.num_gen)
