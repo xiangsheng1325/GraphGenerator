@@ -1,20 +1,20 @@
 # GraphGenerator
+<a href="https://github.com/xiangsheng1325/GraphGenerator" alt="Size">
+        <img src="https://img.shields.io/github/languages/code-size/xiangsheng1325/GraphGenerator?style=plastic"></a>
+
 <a href="https://github.com/xiangsheng1325/GraphGenerator/graphs/contributors" alt="Contributors">
-        <img src="https://img.shields.io/github/contributors/xiangsheng1325/GraphGenerator?style=plastic" /></a>
+        <img src="https://img.shields.io/github/contributors/xiangsheng1325/GraphGenerator?style=plastic&color=blue" /></a>
         
 <a href="https://github.com/xiangsheng1325/GraphGenerator/pulse" alt="Activity">
         <img src="https://img.shields.io/github/commit-activity/m/xiangsheng1325/GraphGenerator?style=plastic" /></a>
-
-<a href="https://github.com/xiangsheng1325/GraphGenerator">
-        <img src="https://img.shields.io/github/languages/code-size/xiangsheng1325/GraphGenerator?style=plastic"></a>
 
 Toolkit for generating graphs and evaluating graph generators.
 
 ## Installation
 ### Environments
-[![Python](https://img.shields.io/badge/Python-v3.6-blue?style=plastic)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-v1.8.0-red?style=plastic)](https://pypi.org/project/torch/)
-[![Tensorflow](https://img.shields.io/badge/Tensorflow-v2.4.1-blue?style=plastic)](https://pypi.org/project/tensorflow/)
+[![Python](https://img.shields.io/badge/Python-v3.6.8-blue?style=plastic)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-v1.8.0-green?style=plastic)](https://pypi.org/project/torch/)
+[![Tensorflow](https://img.shields.io/badge/Tensorflow-v2.4.1-green?style=plastic)](https://pypi.org/project/tensorflow/)
 
 **1. Install Pytorch**
 ```bash
