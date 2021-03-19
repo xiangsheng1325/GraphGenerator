@@ -1,12 +1,7 @@
 # GraphGenerator
-<a href="https://github.com/xiangsheng1325/GraphGenerator" alt="Size">
-        <img src="https://img.shields.io/github/languages/code-size/xiangsheng1325/GraphGenerator?style=plastic"></a>
-
-<a href="https://github.com/xiangsheng1325/GraphGenerator/graphs/contributors" alt="Contributors">
-        <img src="https://img.shields.io/github/contributors/xiangsheng1325/GraphGenerator?style=plastic&color=blue" /></a>
-        
-<a href="https://github.com/xiangsheng1325/GraphGenerator/pulse" alt="Activity">
-        <img src="https://img.shields.io/github/commit-activity/m/xiangsheng1325/GraphGenerator?style=plastic" /></a>
+[![CodeSize](https://img.shields.io/github/languages/code-size/xiangsheng1325/GraphGenerator?style=plastic)](https://github.com/xiangsheng1325/GraphGenerator)
+[![Contributor](https://img.shields.io/github/contributors/xiangsheng1325/GraphGenerator?style=plastic&color=blue)](https://github.com/xiangsheng1325/GraphGenerator/graphs/contributors)
+[![Activity](https://img.shields.io/github/commit-activity/m/xiangsheng1325/GraphGenerator?style=plastic)](https://github.com/xiangsheng1325/GraphGenerator/pulse)
 
 Toolkit for generating graphs and evaluating graph generators.
 
@@ -14,7 +9,7 @@ Toolkit for generating graphs and evaluating graph generators.
 ### Environments
 [![Python](https://img.shields.io/badge/Python-v3.6.8-blue?style=plastic)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-v1.8.0-green?style=plastic)](https://pypi.org/project/torch/)
-[![Tensorflow](https://img.shields.io/badge/Tensorflow-v2.4.1-green?style=plastic)](https://pypi.org/project/tensorflow/)
+[![Tensorflow](https://img.shields.io/badge/Tensorflow-v2.4.0-blue?style=plastic)](https://pypi.org/project/tensorflow/)
 
 **1. Install Pytorch**
 ```bash
