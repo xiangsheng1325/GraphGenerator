@@ -1,0 +1,11 @@
+---
+exp_name: B-A
+exp_dir: exp/B-A
+seed: 1234
+dataset:
+  name: top10
+  data_path: data/
+model:
+  name: B-A
+  num_nodes: 1000
+num_gen: 10
