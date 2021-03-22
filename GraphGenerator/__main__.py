@@ -2,7 +2,7 @@ import argparse, sys, pickle, warnings, os
 warnings.filterwarnings("ignore")
 from GraphGenerator.metrics import mmd
 from GraphGenerator.test import test_generator
-from GraphGenerator import train
+from GraphGenerator.train import train_base as train
 from GraphGenerator.preprocessing import dataio, utils
 from GraphGenerator.utils.arg_utils import get_config
 import pandas as pd
