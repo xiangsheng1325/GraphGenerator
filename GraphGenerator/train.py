@@ -1,5 +1,6 @@
 import scipy.sparse as sp
 import GraphGenerator.models.kronecker as kronecker
+import GraphGenerator.models.rmat as rmat
 import GraphGenerator.models.er as er
 import GraphGenerator.models.ws as ws
 import GraphGenerator.models.ba as ba
@@ -129,7 +130,7 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
     elif generator in ['sbm', 'dcsbm']:
         graphs = sbm.generate(input_data, generator, repeat)
     elif generator in ['rmat', 'kronecker']:
-        graphs = kronecker.generate(input_data, config)
+        graphs = eval(generator).generate(input_data, config)
     elif generator in ['vgae', 'graphite']:
         sp_adj = nx.adjacency_matrix(input_data).astype(np.float32)
         # print("Shape!", sp_adj.shape)
