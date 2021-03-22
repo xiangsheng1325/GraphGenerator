@@ -1,8 +1,41 @@
-import pyemd, argparse, pickle
+import pyemd, random
+from GraphGenerator.models.er import complete_graph
 from scipy.linalg import toeplitz
 import numpy as np
 import networkx as nx
-import multiprocessing as mp
+
+
+def watts_strogatz_graph(n, k, p):
+    if k > n:
+        raise nx.NetworkXError("k>n, choose smaller k or larger n")
+
+    # If k == n, the graph is complete not Watts-Strogatz
+    if k == n:
+        return complete_graph(n)
+    G = nx.Graph()
+    nodes = list(range(n))  # nodes are labeled 0 to n-1
+    # connect each node to k/2 neighbors
+    for j in range(1, k // 2 + 1):
+        targets = nodes[j:] + nodes[0:j]  # first j nodes are now last in list
+        G.add_edges_from(zip(nodes, targets))
+    # rewire edges from each node
+    # loop over all nodes in order (label) and neighbors in order (distance)
+    # no self loops or multiple edges allowed
+    for j in range(1, k // 2 + 1):  # outer loop is neighbors
+        targets = nodes[j:] + nodes[0:j]  # first j nodes are now last in list
+        # inner loop in node order
+        for u, v in zip(nodes, targets):
+            if random.random() < p:
+                w = random.choice(nodes)
+                # Enforce no self-loops or multiple edges
+                while w == u or G.has_edge(u, w):
+                    w = random.choice(nodes)
+                    if G.degree(u) >= n - 1:
+                        break  # skip this rewiring
+                else:
+                    G.remove_edge(u, v)
+                    G.add_edge(u, w)
+    return G
 
 
 def wasserstein_distance(x, y, distance_scaling=1.0):
@@ -25,7 +58,7 @@ def wasserstein_distance(x, y, distance_scaling=1.0):
 def degree_loss(x, n=3, real_g=None, generator='W-S', k=2):
     pred_g = nx.empty_graph()
     if generator == 'W-S':
-        pred_g = nx.watts_strogatz_graph(n, k, x)
+        pred_g = watts_strogatz_graph(n, k, x)
     real_hist = np.array(nx.degree_histogram(real_g))
     real_hist = real_hist / np.sum(real_hist)
     pred_hist = np.array(nx.degree_histogram(pred_g))
