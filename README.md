@@ -28,7 +28,7 @@ pip install -e .
 |VGAE|Pytorch|NetGAN|Tensorflow|
 |Graphite|Pytorch|ARVGA|Tensorflow|
 |MMSB|Tensorflow Edward|SBMGNN|Tensorflow|
-|GraphRNN|Pytorch|SBMGNN|Pytorch|
+|GraphRNN|Pytorch|BTER|MATLAB|
 |GRAN|Pytorch|BiGG|Pytorch|
 |CondGEN|Pytorch|SGAE|Pytorch|
 
