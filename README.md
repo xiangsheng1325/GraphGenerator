@@ -22,6 +22,16 @@ cd GraphGenerator
 pip install -r requirements.txt
 pip install -e .
 ```
+### Dependencies
+|Graph Generator|Dependencies|Graph Generator|Dependencies|
+|--|--|--|--|
+|VGAE|Pytorch|NetGAN|Tensorflow|
+|Graphite|Pytorch|ARVGA|Tensorflow|
+|MMSB|Tensorflow Edward|SBMGNN|Tensorflow|
+|GraphRNN|Pytorch|SBMGNN|Pytorch|
+|GRAN|Pytorch|BiGG|Pytorch|
+|CondGEN|Pytorch|SGAE|Pytorch|
+
 
 ### Project organization
 
