@@ -25,12 +25,12 @@ pip install -e .
 ### Dependencies
 |Graph Generator|Dependencies|Graph Generator|Dependencies|
 |--|--|--|--|
-|VGAE|Pytorch|NetGAN|Tensorflow|
-|Graphite|Pytorch|ARVGA|Tensorflow|
-|MMSB|Tensorflow Edward|SBMGNN|Tensorflow|
-|GraphRNN|Pytorch|BTER|MATLAB|
-|GRAN|Pytorch|BiGG|Pytorch|
-|CondGEN|Pytorch|SGAE|Pytorch|
+|ARVGA|Tensorflow|GraphRNN|Pytorch|
+|BiGG|Pytorch|MMSB|Tensorflow Edward|
+|BTER|MATLAB|NetGAN|Tensorflow|
+|CondGEN|Pytorch|SBMGNN|Tensorflow|
+|GRAN|Pytorch|SGAE|Pytorch|
+|Graphite|Pytorch|VGAE|Pytorch|
 
 
 ### Project organization
