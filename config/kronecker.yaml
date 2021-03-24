@@ -7,5 +7,5 @@ dataset:
   data_path: data/
 model:
   name: Kronecker
-  init_mat: 0.9 0.6 0.6 0.1
+  init_mat: 0.9 0.6; 0.6 0.1
 num_gen: 10

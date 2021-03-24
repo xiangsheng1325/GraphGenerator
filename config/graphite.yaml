@@ -1,7 +1,7 @@
 ---
 exp_name: Graphite
 exp_dir: exp/Graphite
-device: cuda:0
+device: cuda:1
 gpu: 1
 #device: cpu
 seed: 1234

@@ -14,7 +14,7 @@ import community
 import pickle
 import re
 
-import data
+from GraphGenerator.utils import data_utils as data
 
 
 def citeseer_ego():

@@ -1,8 +1,8 @@
 ---
 exp_name: VGAE
 exp_dir: exp/VGAE
-device: cuda:0
-gpu: 1
+device: cuda:2
+gpu: 2
 #device: cpu
 seed: 1234
 dataset:

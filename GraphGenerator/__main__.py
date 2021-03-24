@@ -54,7 +54,7 @@ if __name__ == '__main__':
         if args.config is None:
             args.config = "config/{}.yaml".format(args.generator)
         config = get_config(args.config)
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(config.gpu)
+        # os.environ["CUDA_VISIBLE_DEVICES"] = str(config.gpu)
         print("Start (training and) inferencing graph...")
         output_data = []
         if isinstance(input_data, list):

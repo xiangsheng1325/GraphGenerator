@@ -1,10 +1,13 @@
 import scipy.sparse as sp
+from GraphGenerator.utils.arg_utils import set_device
 import GraphGenerator.models.kronecker as kronecker
 import GraphGenerator.models.rmat as rmat
 import GraphGenerator.models.er as er
 import GraphGenerator.models.ws as ws
 import GraphGenerator.models.ba as ba
 import GraphGenerator.models.sbm as sbm
+import GraphGenerator.models.vgae as vgae
+import GraphGenerator.models.graphite as graphite
 import GraphGenerator.models.bigg as bigg
 import networkx as nx
 import torch.optim as optim
@@ -123,7 +126,7 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
     :return: generated graphs
     """
     # graphs = []
-    if generator in ['E-R', 'W-S', 'B-A']:
+    if generator in ['e-r', 'w-s', 'b-a', 'E-R', 'W-S', 'B-A']:
         tmp_name = generator.lower()
         model_name = "{}.{}".format(tmp_name.replace('-', ''), tmp_name.replace('-', '_'))
         graphs = eval(model_name)(input_data, config)
@@ -132,6 +135,7 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
     elif generator in ['rmat', 'kronecker']:
         graphs = eval(generator).generate(input_data, config)
     elif generator in ['vgae', 'graphite']:
+        set_device(config)
         sp_adj = nx.adjacency_matrix(input_data).astype(np.float32)
         # print("Shape!", sp_adj.shape)
         feature = coo_to_csp(sp.diags(np.array([1. for i in range(sp_adj.shape[0])],
