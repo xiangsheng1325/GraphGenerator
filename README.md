@@ -92,7 +92,7 @@ _Example:_
 Enjoy your graph simulation and graph data generation.
 
 _Example:_
-* run `python -m GraphGenerator --phase train -i google.graph -o new_google.graphs -g vgae --config config/vgae.yaml`
+* run `python -m GraphGenerator --phase train -i google.graph -g vgae --config config/vgae.yaml`
 
 **4. Evaluate the results**
 
