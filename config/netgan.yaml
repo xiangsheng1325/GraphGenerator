@@ -1,0 +1,33 @@
+---
+exp_name: NetGAN
+exp_dir: exp/NetGAN
+device: cuda:1
+gpu: 1
+#device: cpu
+seed: 1234
+dataset:
+  name: top10
+  data_path: data/
+model:
+  name: NetGAN
+  num_nodes: 1000
+  embedding_dim: 256
+  rw_len: 16
+train:
+  optimizer: Adam
+  lr: 1.0e-4
+  batch_size: 128
+  max_epochs: 200000
+  eval_iter: 2000
+  display_iter: 200000
+  #display_iter: 20000
+  snapshot_epoch: 2000
+  val_share: 0.15
+  test_share: 0.05
+  stopping_criterion: val
+  #stopping_criterion: eo # 'eo' means early stopping
+test:
+  sample_num: 1000
+  num_gen: 10
+  test_model_dir: exp/Template_name/Template_model_Template_data_2021-Feb-25-10-38-59_12345
+  test_model_name: model_snapshot_0001000.pth
