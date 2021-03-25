@@ -1,0 +1,38 @@
+---
+exp_name: GraphRNN
+exp_dir: exp/GraphRNN
+device: cuda:1
+gpu: 1
+#device: cpu
+seed: 1234
+dataset:
+  name: top10
+  data_path: data/
+  num_workers: 4
+model:
+  name: GraphRNN_RNN
+  #name: GraphRNN_MLP
+  num_nodes: 1000
+  hidden_size_rnn: 128
+  hidden_size_rnn_output: 16
+  embedding_size_rnn: 64
+  embedding_size_rnn_output: 8
+  embedding_size_output: 64
+  num_layers: 4
+  max_num_node: null
+  max_prev_node: null
+train:
+  optimizer: Adam
+  lr: 3.0e-3
+  lr_rate: 0.3
+  max_epochs: 2000
+  batch_ratio: 1
+  validate_epoch: 100
+  validate_sample: 2
+  save_snapshot: true
+  snapshot_epoch: 100
+  resume: false
+  resume_epoch: 100
+test:
+  test_model_dir: exp/Template_name/Template_model_Template_data_2021-Feb-25-10-38-59_12345
+  test_model_name: model_snapshot_0001000.pth
