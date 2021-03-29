@@ -191,6 +191,5 @@ def rtg(in_graph, config):
     return generate_new_graph(parameters, config.model.name, repeat=config.num_gen)
 
 
-
 if __name__ == '__main__':
     tmp = rtg_graph(5429, 20, 0.09, 0.01, 1)

@@ -1,7 +1,4 @@
-/////////////////////////////////////////////////
-// Xml-Object-Saving
 TStrStrH TXmlObjSer::TypeNmToTagNmH;
-
 TStr TXmlObjSer::GetTagNm(const TStr& TypeNm){
   TStr& XmlTagNm=TypeNmToTagNmH.AddDat(TypeNm);
   if (XmlTagNm.Empty()){
@@ -18,27 +15,26 @@ TStr TXmlObjSer::GetTagNm(const TStr& TypeNm){
   }
   return XmlTagNm;
 }
-
 void TXmlObjSer::AssertXmlHd(
  const PXmlTok& XmlTok, const TStr& Nm, const TStr& TypeNm){
-  // check if the token is full
+
   EAssertR(!XmlTok.Empty(), "Xml-Token Empty");
-  // if name is empty then tag=type else tag=name
+
   if (!Nm.Empty()){
-    // check if the token is tag
+
     if (!XmlTok->IsTag()){
       TStr ArgStr1="Expected: Tag";
       TStr ArgStr2=TStr("Found: ")+XmlTok->GetSymStr();
       TExcept::Throw("Invalid Xml-Token", ArgStr1, ArgStr2);
     }
     if (Nm!="-"){
-      // check if the tag is correct
+
       if (!XmlTok->IsTag(Nm)){
         TStr ArgStr1=TStr("Expected: ")+Nm;
         TStr ArgStr2=TStr("Found: ")+XmlTok->GetStr();
         TExcept::Throw("Invalid Xml-Tag", ArgStr1, ArgStr2);
       }
-      // check if the type is correct
+
       TStr TypeArgVal=XmlTok->GetStrArgVal("Type");
       if (TypeArgVal!=TypeNm){
         TStr ArgStr1=TStr("Expected: ")+TypeNm;
@@ -47,7 +43,7 @@ void TXmlObjSer::AssertXmlHd(
       }
     }
   } else {
-    // check if the tag is correct
+
     if (!XmlTok->IsTag(TypeNm)){
       TStr ArgStr1=TStr("Expected: ")+TypeNm;
       TStr ArgStr2=TStr("Found: ")+XmlTok->GetSymStr();
@@ -55,7 +51,6 @@ void TXmlObjSer::AssertXmlHd(
     }
   }
 }
-
 bool TXmlObjSer::GetBoolArg(const PXmlTok& XmlTok, const TStr& Nm){
   TStr ValStr;
   if (XmlTok->IsArg(Nm, ValStr)){
@@ -70,7 +65,6 @@ bool TXmlObjSer::GetBoolArg(const PXmlTok& XmlTok, const TStr& Nm){
   }
   Fail; return 0;
 }
-
 int TXmlObjSer::GetIntArg(const PXmlTok& XmlTok, const TStr& Nm){
   TStr ValStr;
   if (XmlTok->IsArg(Nm, ValStr)){
@@ -85,7 +79,6 @@ int TXmlObjSer::GetIntArg(const PXmlTok& XmlTok, const TStr& Nm){
   }
   Fail; return 0;
 }
-
 int64 TXmlObjSer::GetInt64Arg(const PXmlTok& XmlTok, const TStr& Nm){
   TStr ValStr;
   if (XmlTok->IsArg(Nm, ValStr)){
@@ -100,7 +93,6 @@ int64 TXmlObjSer::GetInt64Arg(const PXmlTok& XmlTok, const TStr& Nm){
   }
   Fail; return 0;
 }
-
 double TXmlObjSer::GetFltArg(const PXmlTok& XmlTok, const TStr& Nm){
   TStr ValStr;
   if (XmlTok->IsArg(Nm, ValStr)){
@@ -115,9 +107,6 @@ double TXmlObjSer::GetFltArg(const PXmlTok& XmlTok, const TStr& Nm){
   }
   Fail; return 0;
 }
-
-/////////////////////////////////////////////////
-// Xml-Object-Serialization-Tag-Name
 TXmlObjSerTagNm::TXmlObjSerTagNm(
  TSOut& _SOut, const bool& ETagP,
  const TStr& Nm, const TStr& TypeNm,
@@ -140,7 +129,6 @@ TXmlObjSerTagNm::TXmlObjSerTagNm(
     SOut->PutCh('>');
   }
 }
-
 TXmlObjSerTagNm::TXmlObjSerTagNm(
  TSOut& _SOut, const bool& ETagP,
  const TStr& Nm, const TStr& TypeNm,
@@ -178,95 +166,81 @@ TXmlObjSerTagNm::TXmlObjSerTagNm(
     SOut->PutCh('>');
   }
 }
-
 TXmlObjSerTagNm::~TXmlObjSerTagNm(){
   if (!TagNm.Empty()){
     SOut->PutCh('<'); SOut->PutCh('/'); SOut->PutStr(TagNm); SOut->PutCh('>');
   }
 }
-
-/////////////////////////////////////////////////
-// Xml-Chars
 void TXmlChDef::SetChTy(TBSet& ChSet, const int& MnCh, const int& MxCh){
   IAssert((0<=MnCh)&&((MxCh==-1)||((MnCh<=MxCh)&&(MxCh<Chs))));
   ChSet.Incl(MnCh);
   for (int Ch=MnCh+1; Ch<=MxCh; Ch++){
     ChSet.Incl(Ch);}
 }
-
 void TXmlChDef::SetChTy(TBSet& ChSet, const TStr& Str){
   for (int ChN=0; ChN<Str.Len(); ChN++){
     uchar Ch=Str[ChN];
     ChSet.Incl(Ch);
   }
 }
-
 void TXmlChDef::SetEntityVal(const TStr& Nm, const TStr& Val){
   EntityNmToValH.AddDat(Nm, Val);
 }
-
 TXmlChDef::TXmlChDef():
   Chs(TUCh::Vals),
   CharChSet(), CombChSet(), ExtChSet(),
   LetterChSet(), DigitChSet(), NameChSet(), PubidChSet(),
   EntityNmToValH(100){
 
-  // Character-Sets
-  // Char ::= #x9 | #xA | #xD | [#x20-#xD7FF] | ...
+
   CharChSet.Gen(Chs);
-  // ... because of DMoz (temporary patch)
+
   SetChTy(CharChSet, 0x1); SetChTy(CharChSet, 0x3); SetChTy(CharChSet, 0x6);
   SetChTy(CharChSet, 11); SetChTy(CharChSet, 24); SetChTy(CharChSet, 27);
-  // regular characters
+
   SetChTy(CharChSet, 0x9); SetChTy(CharChSet, 0xA); SetChTy(CharChSet, 0xD);
   SetChTy(CharChSet, 0x20, TUCh::Mx);
-  // BaseChar ::=  [#x0041-#x005A] | [#x0061-#x007A] | [#x00C0-#x00D6] |
-  //  [#x00D8-#x00F6] | [#x00F8-#x00FF] | ...
+
+
   TBSet BaseChSet(Chs);
   SetChTy(BaseChSet, 0x41, 0x5A); SetChTy(BaseChSet, 0x61, 0x7A);
   SetChTy(BaseChSet, 0xC0, 0xD6); SetChTy(BaseChSet, 0xD8, 0xF6);
   SetChTy(BaseChSet, 0xF8, 0xFF);
-  // Ideographic ::= ...
+
   TBSet IdeoChSet(Chs);
-  // CombiningChar ::= ...
+
   CombChSet.Gen(Chs);
-  // Extender ::=  #x00B7 | ...
+
   ExtChSet.Gen(Chs);
   SetChTy(ExtChSet, 0xB7);
-  // Letter ::=  BaseChar | Ideographic
+
   LetterChSet=BaseChSet|IdeoChSet;
-  // Digit ::=  [#x0030-#x0039] | ...
+
   DigitChSet.Gen(Chs);
   SetChTy(DigitChSet, 0x30, 0x39);
-  // NameChar ::=  Letter | Digit | '.' | '-' | '_' | ':' | CombiningChar
+
   NameChSet=LetterChSet|DigitChSet|
    uchar('.')|uchar('-')|uchar('_')|uchar(':')|CombChSet;
-  // PubidChar ::=  #x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
+
   PubidChSet.Gen(Chs);
   SetChTy(PubidChSet, 0x20); SetChTy(PubidChSet, 0xD); SetChTy(PubidChSet, 0xA);
   SetChTy(PubidChSet, 'a', 'z'); SetChTy(PubidChSet, 'A', 'Z');
   SetChTy(PubidChSet, '0', '9'); SetChTy(PubidChSet, "-'()+,./:=?;!*#@$_%");
 
-  // Standard-Entity-Sequences
   SetEntityVal("amp", "&");
   SetEntityVal("lt", "<"); SetEntityVal("gt", ">");
   SetEntityVal("apos", "'"); SetEntityVal("quot", "\"");
 }
-
-/////////////////////////////////////////////////
-// Xml-Lexical
 TXmlChDef TXmlLx::ChDef;
-
 uchar TXmlLx::GetCh(){
   EAssert(Ch!=TCh::EofCh);
   PrevCh=Ch;
   if (ChStack.Empty()){Ch=(RSIn.Eof()) ? TCh::EofCh : RSIn.GetCh();}
   else {Ch=ChStack.Pop();}
   ChN++; if (Ch==TCh::LfCh){LnN++; LnChN=0;} else {LnChN++;}
-  //putchar(Ch);
+
   return Ch;
 }
-
 void TXmlLx::ToNrSpacing(){
   if (Spacing==xspIntact){
   } else
@@ -285,7 +259,7 @@ void TXmlLx::ToNrSpacing(){
     TxtChA.Trunc(DstChN);
   } else
   if (Spacing==xspSeparate){
-    // squeeze series of white-spaces to single space
+
     int SrcChN=0; int DstChN=0;
     while (SrcChN<TxtChA.Len()){
       if (ChDef.IsWs(TxtChA[SrcChN])){
@@ -303,8 +277,8 @@ void TXmlLx::ToNrSpacing(){
     TxtChA.Trunc(DstChN);
   } else
   if (Spacing==xspTruncate){
-    // cut leading and trailing white-spaces and
-    // squeeze series of white-spaces to single space
+
+
     int SrcChN=0; int DstChN=0;
     while (SrcChN<TxtChA.Len()){
       if (ChDef.IsWs(TxtChA[SrcChN])){
@@ -320,30 +294,28 @@ void TXmlLx::ToNrSpacing(){
       }
     }
     TxtChA.Trunc(DstChN);
-    // delete trailing white-spaces
+
     while ((TxtChA.Len()>0)&&(ChDef.IsWs(TxtChA.LastCh()))){
       TxtChA.Pop();}
   } else {
     Fail;
   }
 }
-
 void TXmlLx::GetWs(const bool& IsRq){
-  // [3] S ::=  (#x20 | #x9 | #xD | #xA)+
+
   int WSpaces=0; TxtChA.Clr();
   while (ChDef.IsWs(Ch)){
     WSpaces++; TxtChA+=Ch; GetCh();}
   if (IsRq&&(WSpaces==0)){
     EThrow("White-space required.");}
 }
-
 TStr TXmlLx::GetReference(){
-  // [67] Reference ::=  EntityRef | CharRef
+
   if (Ch=='#'){
-    // [66]  CharRef ::=  '&#' [0-9]+ ';' | '&#x' [0-9a-fA-F]+ ';'
+
     TChA RefChA; int RefCd=0;
     if (GetCh()=='x'){
-      // hex-decimal character code
+
       forever {
         GetCh();
         if (TCh::IsHex(Ch)){
@@ -354,7 +326,7 @@ TStr TXmlLx::GetReference(){
         }
       }
     } else {
-      // decimal character code
+
       forever {
         if (TCh::IsNum(Ch)){
           RefChA+=Ch;
@@ -368,7 +340,7 @@ TStr TXmlLx::GetReference(){
     if ((!RefChA.Empty())&&(Ch==';')){
       GetCh();
 	  if (RefCd < 0x80) {
-		  // 8-bit char
+
 	      uchar RefCh=uchar(RefCd);
 		  return TStr(RefCh);
 	  } else {
@@ -379,13 +351,13 @@ TStr TXmlLx::GetReference(){
       EThrow("Invalid Char-Reference."); Fail; return TStr();
     }
   } else {
-    // [68]  EntityRef ::=  '&' Name ';'
+
     TStr EntityNm=GetName();
     if ((!EntityNm.Empty())&&(Ch==';')){
       GetCh();
       TStr EntityVal;
-      if (IsEntityNm(EntityNm, EntityVal)){/*intentionaly empty*/}
-      else if (ChDef.IsEntityNm(EntityNm, EntityVal)){/*intentionaly empty*/}
+      if (IsEntityNm(EntityNm, EntityVal)){}
+      else if (ChDef.IsEntityNm(EntityNm, EntityVal)){}
       else {EThrow(TStr("Entity-Reference (")+EntityNm+") does not exist.");}
       return EntityVal;
     } else {
@@ -393,48 +365,43 @@ TStr TXmlLx::GetReference(){
     }
   }
 }
-
 TStr TXmlLx::GetPEReference(){
-  // [69]  PEReference ::=  '%' Name ';'
+
   TStr EntityNm=GetName();
   if ((EntityNm.Empty())||(Ch!=';')){EThrow("Invalid PEntity-Reference.");}
   GetCh();
   TStr EntityVal;
-  if (IsPEntityNm(EntityNm, EntityVal)){/*intentionaly empty*/}
+  if (IsPEntityNm(EntityNm, EntityVal)){}
   else {EThrow(TStr("PEntity-Reference (")+EntityNm+") does not exist.");}
   return EntityVal;
 }
-
 void TXmlLx::GetEq(){
-  // [25] Eq ::=  S? '=' S?
+
   GetWs(false);
   if (Ch=='='){GetCh();}
   else {EThrow("Equality ('=') character expected.");}
   GetWs(false);
 }
-
 TStr TXmlLx::GetName(){
-  // [5] Name ::=  (Letter | '_' | ':') (NameChar)*
+
   TChA NmChA;
   if (ChDef.IsFirstNameCh(Ch)){
     do {NmChA+=Ch;} while (ChDef.IsName(GetCh()));
   } else {
     EThrow("Invalid first name character.");
-    // EThrow(TStr::Fmt("Invalid first name character [%u:'%c%c%c%c%c'].", 
-    //  uint(Ch), Ch, RSIn.GetCh(), RSIn.GetCh(), RSIn.GetCh(), RSIn.GetCh()));
+
+
   }
   return NmChA;
 }
-
 TStr TXmlLx::GetName(const TStr& RqNm){
   TStr Nm=GetName();
-  // test if the name is equal to the required name
+
   if (Nm==RqNm){return RqNm;}
   else {EThrow(TStr("Name '")+RqNm+"' expected."); Fail; return TStr();}
 }
-
 void TXmlLx::GetComment(){
-  // [15] Comment ::=  {{'<!-}}-' ((Char - '-') | ('-' (Char - '-')))* '-->'
+
   if (GetCh()!='-'){EThrow("Invalid comment start.");}
   TxtChA.Clr();
   forever {
@@ -442,37 +409,35 @@ void TXmlLx::GetComment(){
     if (!ChDef.IsChar(Ch)){EThrow("Invalid comment character.");}
     if (Ch=='-'){
       if (GetCh()=='-'){
-        if (GetCh()=='>'){GetCh(); break;} // final bracket
+        if (GetCh()=='>'){GetCh(); break;}
         else {EThrow("Invalid comment end.");}
       } else {
         if (!ChDef.IsChar(Ch)){EThrow("Invalid comment character.");}
-        TxtChA+='-'; TxtChA+=Ch; // special case if single '-'
+        TxtChA+='-'; TxtChA+=Ch;
       }
     } else {
-      TxtChA+=Ch; // usual char
+      TxtChA+=Ch;
     }
   }
 }
-
 TStr TXmlLx::GetAttValue(){
-  // [10]  AttValue ::=  '"' ([^<&"] | Reference)* '"'
-  //  |  "'" ([^<&'] | Reference)* "'"
+
+
   uchar QCh=Ch;
   if ((QCh!='"')&&(QCh!='\'')){EThrow("Invalid attribute-value start.");}
   TChA ValChA; GetCh();
   forever {
     if ((Ch=='<')||(!ChDef.IsChar(Ch))){
       EThrow("Invalid attribute-value character.");}
-    if (Ch==QCh){GetCh(); break;} // final quote
-    else if (Ch=='&'){GetCh(); ValChA+=GetReference();} // reference
-    else {ValChA+=Ch; GetCh();} // usual char
+    if (Ch==QCh){GetCh(); break;}
+    else if (Ch=='&'){GetCh(); ValChA+=GetReference();}
+    else {ValChA+=Ch; GetCh();}
   }
   return ValChA;
 }
-
 TStr TXmlLx::GetVersionNum(){
-  // [24] VersionInfo ::=  {{S 'version' Eq}} (' VersionNum ' | " VersionNum ")
-  // [26] VersionNum ::=  ([a-zA-Z0-9_.:] | '-')+
+
+
   char QCh=Ch;
   if ((Ch!='\'')&&(Ch!='"')){EThrow("Quote character (' or \") expected.");}
   TChA VerNumChA;
@@ -489,10 +454,9 @@ TStr TXmlLx::GetVersionNum(){
   GetCh();
   return VerNumChA;
 }
-
 TStr TXmlLx::GetEncName(){
-  // [80] EncodingDecl ::=  {{S 'encoding' Eq}} ('"' EncName '"' |  "'" EncName "'" )
-  // [81] EncName ::=  [A-Za-z] ([A-Za-z0-9._] | '-')*
+
+
   char QCh=Ch;
   if ((Ch!='\'')&&(Ch!='"')){EThrow("Quote character (' or \") expected.");}
   TChA EncNmChA;
@@ -509,10 +473,9 @@ TStr TXmlLx::GetEncName(){
   GetCh();
   return EncNmChA;
 }
-
 TStr TXmlLx::GetStalVal(){
-  // [32] SDDecl ::=  {{S 'standalone' Eq}}
-  //  (("'" ('yes' | 'no') "'") | ('"' ('yes' | 'no') '"'))
+
+
   char QCh=Ch;
   if ((Ch!='\'')&&(Ch!='"')){EThrow("Quote character (' or \") expected.");}
   TChA StalChA;
@@ -527,25 +490,24 @@ TStr TXmlLx::GetStalVal(){
   if ((StalVal=="yes")||(StalVal=="no")){return StalVal;}
   else {EThrow("Invalid standalone-value."); Fail; return TStr();}
 }
-
 void TXmlLx::GetXmlDecl(){
-  // [23] XMLDecl ::=  {{'<?xml'}}... VersionInfo EncodingDecl? SDDecl? S? '?>'
-  // [24] VersionInfo ::=  S 'version' Eq (' VersionNum ' | " VersionNum ")
+
+
   GetWs(true);
   TStr VerNm=GetName("version"); GetEq(); TStr VerVal=GetVersionNum();
   if (VerVal!="1.0"){EThrow("Invalid XML version.");}
   AddArg(VerNm, VerVal);
   GetWs(false);
   if (Ch!='?'){
-    // EncodingDecl ::=  {{S}} 'encoding' Eq
-    //  ('"' EncName '"' |  "'" EncName "'" )
+
+
     TStr EncNm=GetName("encoding"); GetEq(); TStr EncVal=GetEncName();
     AddArg(EncNm, EncVal);
   }
   GetWs(false);
   if (Ch!='?'){
-    // SDDecl ::=  {{S}} 'standalone' Eq
-    //  (("'" ('yes' | 'no') "'") | ('"' ('yes' | 'no') '"'))
+
+
     TStr StalNm=GetName("standalone"); GetEq(); TStr StalVal=GetStalVal();
     AddArg(StalNm, StalVal);
   }
@@ -558,10 +520,9 @@ void TXmlLx::GetXmlDecl(){
     EThrow("Invalid end-of-tag in XML-declaration.");
   }
 }
-
 void TXmlLx::GetPI(){
-  // [16]  PI ::=  {{'<?' PITarget}} (S (Char* - (Char* '?>' Char*)))? '?>'
-  // [17]  PITarget ::=  Name - (('X' | 'x') ('M' | 'm') ('L' | 'l'))
+
+
   GetWs(false);
   TxtChA.Clr();
   forever {
@@ -571,17 +532,16 @@ void TXmlLx::GetPI(){
         GetCh(); break;
       } else {
         if (!ChDef.IsChar(Ch)){EThrow("Invalid PI character.");}
-        TxtChA+='?'; TxtChA+=Ch; // special case if single '?'
+        TxtChA+='?'; TxtChA+=Ch;
       }
     } else {
-      TxtChA+=Ch; // usual char
+      TxtChA+=Ch;
     }
     GetCh();
   }
 }
-
 TStr TXmlLx::GetSystemLiteral(){
-  // [11]  SystemLiteral ::=  ('"' [^"]* '"') | ("'" [^']* "'")
+
   char QCh=Ch;
   if ((Ch!='\'')&&(Ch!='"')){EThrow("Quote character (' or \") expected.");}
   TChA LitChA; GetCh();
@@ -592,9 +552,8 @@ TStr TXmlLx::GetSystemLiteral(){
   GetCh();
   return LitChA;
 }
-
 TStr TXmlLx::GetPubidLiteral(){
-  // [12]  PubidLiteral ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'"
+
   char QCh=Ch;
   if ((Ch!='\'')&&(Ch!='"')){EThrow("Quote character (' or \") expected.");}
   TChA LitChA; GetCh();
@@ -605,10 +564,9 @@ TStr TXmlLx::GetPubidLiteral(){
   GetCh();
   return LitChA;
 }
-
 void TXmlLx::GetExternalId(){
-  // ExternalID ::=  'SYSTEM' S SystemLiteral
-  //  | 'PUBLIC' S PubidLiteral S SystemLiteral
+
+
   TStr ExtIdNm=GetName();
   if (ExtIdNm=="SYSTEM"){
     GetWs(true); GetSystemLiteral();
@@ -618,15 +576,13 @@ void TXmlLx::GetExternalId(){
     EThrow("Invalid external-id ('SYSTEM' or 'PUBLIC' expected).");
   }
 }
-
 void TXmlLx::GetNData(){
-  // [76]  NDataDecl ::=  S 'NDATA' S Name
+
   GetName("NDATA"); GetWs(true); GetName();
 }
-
 void TXmlLx::GetDocTypeDecl(){
-  // [28] doctypedecl ::=  {{'<!DOCTYPE'}} S Name (S ExternalID)? S?
-  //  ('[' (markupdecl | PEReference | S)* ']' S?)? '>'
+
+
   GetWs(true);
   TStr DocTypeDeclNm=GetName();
   GetWs(false);
@@ -635,7 +591,7 @@ void TXmlLx::GetDocTypeDecl(){
   GetWs(false);
   if (Ch=='['){
     GetCh();
-    // [28] (markupdecl | PEReference | S)*
+
     GetWs(false);
     while (Ch!=']'){
       if (ChDef.IsWs(Ch)){GetWs(true);}
@@ -647,12 +603,11 @@ void TXmlLx::GetDocTypeDecl(){
     GetCh();
   }
   GetWs(false);
-  // '>'
+
   if (Ch=='>'){GetCh();}
   else {EThrow("Invalid end-of-tag in document-type-declaration.");}
   TagNm=DocTypeDeclNm;
 }
-
 void TXmlLx::GetElement(){
   TxtChA.Clr();
   while (Ch!='>'){
@@ -661,7 +616,6 @@ void TXmlLx::GetElement(){
   }
   GetCh();
 }
-
 void TXmlLx::GetAttList(){
   TxtChA.Clr();
   while (Ch!='>'){
@@ -670,31 +624,29 @@ void TXmlLx::GetAttList(){
   }
   GetCh();
 }
-
 TStr TXmlLx::GetEntityValue(){
-  // [9]  EntityValue ::=  '"' ([^%&"] | PEReference | Reference)* '"'
-  //  | "'" ([^%&'] | PEReference | Reference)* "'"
+
+
   uchar QCh=Ch;
   if ((QCh!='"')&&(QCh!='\'')){EThrow("Invalid entity-value start.");}
   TChA ValChA; GetCh();
   forever {
     if (!ChDef.IsChar(Ch)){EThrow("Invalid entity-value character.");}
-    if (Ch==QCh){GetCh(); break;} // final quote
-    else if (Ch=='&'){GetCh(); ValChA+=GetReference();} // reference
-    else if (Ch=='%'){GetCh(); ValChA+=GetPEReference();} // pereference
-    else {ValChA+=Ch; GetCh();} // usual char
+    if (Ch==QCh){GetCh(); break;}
+    else if (Ch=='&'){GetCh(); ValChA+=GetReference();}
+    else if (Ch=='%'){GetCh(); ValChA+=GetPEReference();}
+    else {ValChA+=Ch; GetCh();}
   }
   return ValChA;
 }
-
 void TXmlLx::GetEntity(){
-  // [70] EntityDecl ::=  GEDecl | PEDecl
-  // [71] GEDecl ::=  '<!ENTITY' S Name S EntityDef S? '>'
-  // [72] PEDecl ::=  '<!ENTITY' S '%' S Name S PEDef S? '>'
+
+
+
   GetWs(true); TStr EntityNm;
   if (Ch=='%'){
     GetCh(); GetWs(true); EntityNm=GetName(); GetWs(true);
-    // [74] PEDef ::=  EntityValue | ExternalID
+
     if ((Ch=='\"')||(Ch=='\'')){
       TStr EntityVal=GetEntityValue();
       PutPEntityVal(EntityNm, EntityVal);
@@ -705,7 +657,7 @@ void TXmlLx::GetEntity(){
     }
   } else {
     EntityNm=GetName(); GetWs(true);
-    // [73] EntityDef ::=  EntityValue | (ExternalID NDataDecl?)
+
     if ((Ch=='\"')||(Ch=='\'')){
       TStr EntityVal=GetEntityValue();
       PutEntityVal(EntityNm, EntityVal);
@@ -718,10 +670,9 @@ void TXmlLx::GetEntity(){
   else {EThrow("Invalid end-of-tag in entity-declaration.");}
   TagNm=EntityNm;
 }
-
 void TXmlLx::GetNotation(){
-  // [82] NotationDecl ::=  '<!NOTATION' S Name S (ExternalID |  PublicID) S? '>'
-  // [83]  PublicID ::=  'PUBLIC' S PubidLiteral
+
+
   TxtChA.Clr();
   while (Ch!='>'){
     if (!ChDef.IsChar(Ch)){EThrow("Invalid Element character.");}
@@ -729,12 +680,11 @@ void TXmlLx::GetNotation(){
   }
   GetCh();
 }
-
 void TXmlLx::GetCDSect(){
-  // [18]  CDSect ::=  CDStart CData CDEnd
-  // [19]  CDStart ::=  '<![CDATA{{['}}
-  // [20]  CData ::=  (Char* - (Char* ']]>' Char*))
-  // [21]  CDEnd ::=  ']]>'
+
+
+
+
   if (Ch=='['){GetCh();}
   else {EThrow("Invalid start of CDATA section.");}
   TxtChA.Clr();
@@ -748,12 +698,10 @@ void TXmlLx::GetCDSect(){
     }
   }
 }
-
 void TXmlLx::SkipWs(){
-  // [3] S ::=  (#x20 | #x9 | #xD | #xA)+
+
   while (ChDef.IsWs(Ch)){GetCh();}
 }
-
 TXmlLxSym TXmlLx::GetSym(){
   if (Ch=='<'){
     GetCh(); ClrArgV();
@@ -782,12 +730,12 @@ TXmlLxSym TXmlLx::GetSym(){
       }
     } else
     if (Ch=='/'){
-      // xsyETag
+
       GetCh(); Sym=xsyETag; TagNm=GetName(); GetWs(false);
       if (Ch=='>'){GetCh();}
       else {EThrow("Invalid End-Tag.");}
     } else {
-      // xsySTag or xsySETag
+
       TagNm=GetName(); GetWs(false);
       while ((Ch!='>')&&(Ch!='/')){
         TStr AttrNm=GetName();
@@ -813,25 +761,24 @@ TXmlLxSym TXmlLx::GetSym(){
     Sym=xsyEof;
   } else {
     Sym=xsyStr; TxtChA.Clr();
-    // [14]  CharData ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)
+
     forever {
       if (!ChDef.IsChar(Ch)){
         EThrow(TUInt::GetStr(Ch, "Invalid character (%d)."));}
-		// GetCh();  continue; // skip invalid characters
-      if (Ch=='<'){break;} // tag
-      if (Ch=='&'){GetCh(); TxtChA+=GetReference();} // reference
+
+      if (Ch=='<'){break;}
+      if (Ch=='&'){GetCh(); TxtChA+=GetReference();}
       else {
         if ((Ch=='>')&&(TxtChA.Len()>=2)&&
          (TxtChA.LastLastCh()==']')&&(TxtChA.LastCh()==']')){
           EThrow("Forbidden substring ']]>' in character data.");}
-        TxtChA+=Ch; GetCh(); // usual char
+        TxtChA+=Ch; GetCh();
       }
     }
     ToNrSpacing();
   }
   return Sym;
 }
-
 TStr TXmlLx::GetSymStr() const {
   TChA SymChA;
   switch (Sym){
@@ -881,7 +828,6 @@ TStr TXmlLx::GetSymStr() const {
   }
   return SymChA;
 }
-
 void TXmlLx::EThrow(const TStr& MsgStr) const {
   TChA FPosChA;
   FPosChA+=" [File:"; FPosChA+=SIn->GetSNm();
@@ -891,7 +837,6 @@ void TXmlLx::EThrow(const TStr& MsgStr) const {
   TStr FullMsgStr=MsgStr+FPosChA;
   TExcept::Throw(FullMsgStr);
 }
-
 TStr TXmlLx::GetFPosStr() const {
   TChA FPosChA;
   FPosChA+=" [File:"; FPosChA+=SIn->GetSNm();
@@ -900,7 +845,6 @@ TStr TXmlLx::GetFPosStr() const {
   FPosChA+="]";
   return FPosChA;
 }
-
 TStr TXmlLx::GetXmlLxSymStr(const TXmlLxSym& XmlLxSym){
   switch (XmlLxSym){
     case xsyUndef: return "Undef";
@@ -923,7 +867,6 @@ TStr TXmlLx::GetXmlLxSymStr(const TXmlLxSym& XmlLxSym){
     default: return "Undef";
   }
 }
-
 bool TXmlLx::IsTagNm(const TStr& Str){
   TChA ChA=Str;
   if (ChA.Len()>0){
@@ -941,7 +884,6 @@ bool TXmlLx::IsTagNm(const TStr& Str){
     return false;
   }
 }
-
 TStr TXmlLx::GetXmlStrFromPlainMem(const TMem& PlainMem){
   TChA XmlChA;
   for (int ChN=0; ChN<PlainMem.Len(); ChN++){
@@ -964,7 +906,6 @@ TStr TXmlLx::GetXmlStrFromPlainMem(const TMem& PlainMem){
   }
   return XmlChA;
 }
-
 TStr TXmlLx::GetXmlStrFromPlainStr(const TChA& PlainChA){
   TChA XmlChA;
   for (int ChN=0; ChN<PlainChA.Len(); ChN++){
@@ -987,7 +928,6 @@ TStr TXmlLx::GetXmlStrFromPlainStr(const TChA& PlainChA){
   }
   return XmlChA;
 }
-
 TStr TXmlLx::GetPlainStrFromXmlStr(const TStr& XmlStr){
   TChA PlainChA;
   TChRet Ch(TStrIn::New(XmlStr));
@@ -996,12 +936,12 @@ TStr TXmlLx::GetPlainStrFromXmlStr(const TStr& XmlStr){
     if (Ch()!='&'){
       PlainChA+=Ch(); Ch.GetCh();
     } else {
-      // [67] Reference ::=  EntityRef | CharRef
+
       if (Ch.GetCh()=='#'){
-        // [66]  CharRef ::=  '&#' [0-9]+ ';' | '&#x' [0-9a-fA-F]+ ';'
+
         TChA RefChA; int RefCd=0;
         if (Ch.GetCh()=='x'){
-          // hex-decimal character code
+
           forever {
             Ch.GetCh();
             if (TCh::IsHex(Ch())){
@@ -1012,7 +952,7 @@ TStr TXmlLx::GetPlainStrFromXmlStr(const TStr& XmlStr){
             }
           }
         } else {
-          // decimal character code
+
           forever {
             if (TCh::IsNum(Ch())){
               RefChA+=Ch();
@@ -1026,16 +966,16 @@ TStr TXmlLx::GetPlainStrFromXmlStr(const TStr& XmlStr){
         if ((!RefChA.Empty())&&(Ch()==';')){
           Ch.GetCh();
 		  if (RefCd < 0x80) {
-			// ascii character
+
 			uchar RefCh=uchar(RefCd);
 			PlainChA+=RefCh;
 		  } else {
-			// unicode
+
 			TUnicode::EncodeUtf8(RefCd, PlainChA);
 		  }
         }
       } else {
-        // [68]  EntityRef ::=  '&' Name ';'
+
         TChA EntityNm;
         while ((!Ch.Eof())&&(Ch()!=';')){
           EntityNm+=Ch(); Ch.GetCh();}
@@ -1052,7 +992,6 @@ TStr TXmlLx::GetPlainStrFromXmlStr(const TStr& XmlStr){
   }
   return PlainChA;
 }
-
 TStr TXmlLx::GetUsAsciiStrFromXmlStr(const TStr& XmlStr){
   TStr UsAsciiStr=XmlStr;
   UsAsciiStr.ChangeStrAll("&#232;", "c");
@@ -1068,7 +1007,6 @@ TStr TXmlLx::GetUsAsciiStrFromXmlStr(const TStr& XmlStr){
   }
   return UsAsciiChA;
 }
-
 TStr TXmlLx::GetChRefFromYuEntRef(const TStr& YuEntRefStr){
   TStr ChRefStr=YuEntRefStr;
   ChRefStr.ChangeStrAll("&ch;", "&#232;");
@@ -1083,20 +1021,15 @@ TStr TXmlLx::GetChRefFromYuEntRef(const TStr& YuEntRefStr){
   ChRefStr.ChangeStrAll("&Dz;", "Dz");
   return ChRefStr;
 }
-
-/////////////////////////////////////////////////
-// Xml-Token
 bool TXmlTok::GetBoolArgVal(const TStr& ArgNm, const bool& DfVal) const {
   int ArgN=ArgNmValV.SearchForw(TStrKd(ArgNm));
   return (ArgN==-1) ? DfVal : (ArgNmValV[ArgN].Dat==TBool::TrueStr);
 }
-
 bool TXmlTok::GetBoolArgVal(
  const TStr& ArgNm, const TStr& TrueVal, const bool& DfVal) const {
   int ArgN=ArgNmValV.SearchForw(TStrKd(ArgNm));
   return (ArgN==-1) ? DfVal : (ArgNmValV[ArgN].Dat==TrueVal);
 }
-
 bool TXmlTok::GetBoolArgVal(const TStr& ArgNm,
  const TStr& TrueVal, const TStr& FalseVal, const bool& DfVal) const {
   int ArgN=ArgNmValV.SearchForw(TStrKd(ArgNm));
@@ -1105,7 +1038,6 @@ bool TXmlTok::GetBoolArgVal(const TStr& ArgNm,
   if (ArgVal==TrueVal){return true;}
   IAssert(ArgVal == FalseVal); return false;
 }
-
 int TXmlTok::GetIntArgVal(const TStr& ArgNm, const int& DfVal) const {
   int ArgN=ArgNmValV.SearchForw(TStrKd(ArgNm));
   if (ArgN==-1){
@@ -1115,7 +1047,6 @@ int TXmlTok::GetIntArgVal(const TStr& ArgNm, const int& DfVal) const {
     if (ArgNmValV[ArgN].Dat.IsInt(Val)){return Val;} else {return DfVal;}
   }
 }
-
 double TXmlTok::GetFltArgVal(const TStr& ArgNm, const double& DfVal) const {
   int ArgN=ArgNmValV.SearchForw(TStrKd(ArgNm));
   if (ArgN==-1){
@@ -1125,12 +1056,10 @@ double TXmlTok::GetFltArgVal(const TStr& ArgNm, const double& DfVal) const {
     if (ArgNmValV[ArgN].Dat.IsFlt(Val)){return Val;} else {return DfVal;}
   }
 }
-
 TStr TXmlTok::GetStrArgVal(const TStr& ArgNm, const TStr& DfVal) const {
   int ArgN=ArgNmValV.SearchForw(TStrKd(ArgNm));
   return (ArgN==-1) ? DfVal : ArgNmValV[ArgN].Dat;
 }
-
 void TXmlTok::PutSubTok(const PXmlTok& Tok, const int& SubTokN){
   if (SubTokN==-1){
     ClrSubTok(); AddSubTok(Tok);
@@ -1138,7 +1067,6 @@ void TXmlTok::PutSubTok(const PXmlTok& Tok, const int& SubTokN){
     SubTokV[SubTokN]=Tok;
   }
 }
-
 PXmlTok TXmlTok::GetTagTok(const TStr& TagPath) const {
   if (TagPath.Empty()){
     return (TXmlTok*)this;
@@ -1154,7 +1082,6 @@ PXmlTok TXmlTok::GetTagTok(const TStr& TagPath) const {
     else {return SubTok->GetTagTok(RestTagPath);}
   }
 }
-
 void TXmlTok::GetTagTokV(const TStr& TagPath, TXmlTokV& XmlTokV) const {
   XmlTokV.Clr();
   TStr PreTagPath; TStr TagNm; TagPath.SplitOnLastCh(PreTagPath, '|', TagNm);
@@ -1167,7 +1094,6 @@ void TXmlTok::GetTagTokV(const TStr& TagPath, TXmlTokV& XmlTokV) const {
     }
   }
 }
-
 void TXmlTok::GetTagValV(const TStr& TagNm, const bool& XmlP, TStrV& ValV) const {
   if ((Sym==xsyTag)&&(Str==TagNm)){
     ValV.Add(GetTokStr(XmlP));
@@ -1176,12 +1102,10 @@ void TXmlTok::GetTagValV(const TStr& TagNm, const bool& XmlP, TStrV& ValV) const
       GetSubTok(SubTokN)->GetTagValV(TagNm, XmlP, ValV);}
   }
 }
-
 TStr TXmlTok::GetTagVal(const TStr& TagNm, const bool& XmlP) const {
   TStrV ValV; GetTagValV(TagNm, XmlP, ValV);
   if (ValV.Len()>0){return ValV[0];} else {return "";}
 }
-
 void TXmlTok::AddTokToChA(const bool& XmlP, TChA& ChA) const {
   switch (Sym){
     case xsyWs:
@@ -1215,7 +1139,6 @@ void TXmlTok::AddTokToChA(const bool& XmlP, TChA& ChA) const {
     default: Fail;
   }
 }
-
 TStr TXmlTok::GetTokVStr(const TXmlTokV& TokV, const bool& XmlP){
   TChA TokVChA;
   for (int TokN=0; TokN<TokV.Len(); TokN++){
@@ -1224,7 +1147,6 @@ TStr TXmlTok::GetTokVStr(const TXmlTokV& TokV, const bool& XmlP){
   }
   return TokVChA;
 }
-
 PXmlTok TXmlTok::GetTok(TXmlLx& Lx){
   switch (Lx.Sym){
     case xsyWs:
@@ -1237,17 +1159,13 @@ PXmlTok TXmlTok::GetTok(TXmlLx& Lx){
     default: Fail; return NULL;
   }
 }
-
-/////////////////////////////////////////////////
-// Xml-Document
 void TXmlDoc::LoadTxtMiscStar(TXmlLx& Lx){
-  // [27] Misc ::=  Comment | PI |  S
+
   while ((Lx.Sym==xsyComment)||(Lx.Sym==xsyPI)||(Lx.Sym==xsyWs)){
     Lx.GetSym();}
 }
-
 PXmlTok TXmlDoc::LoadTxtElement(TXmlLx& Lx){
-  // [39]  element ::=  EmptyElemTag | STag content ETag
+
   PXmlTok Tok;
   if (Lx.Sym==xsySETag){
     Tok=TXmlTok::GetTok(Lx);
@@ -1294,7 +1212,6 @@ PXmlTok TXmlDoc::LoadTxtElement(TXmlLx& Lx){
   }
   return Tok;
 }
-
 PXmlTok TXmlDoc::GetTagTok(const TStr& TagPath) const {
   if (TagPath.Empty()){
     return Tok;
@@ -1308,14 +1225,12 @@ PXmlTok TXmlDoc::GetTagTok(const TStr& TagPath) const {
     }
   }
 }
-
 void TXmlDoc::PutTagTokStr(const TStr& TagPath, const TStr& TokStr) const {
   PXmlTok Tok=GetTagTok(TagPath);
   Tok->ClrSubTok();
   PXmlTok StrTok=TXmlTok::New(xsyStr, TokStr);
   Tok->AddSubTok(StrTok);
 }
-
 void TXmlDoc::GetTagTokV(const TStr& TagPath, TXmlTokV& XmlTokV) const {
   XmlTokV.Clr();
   TStr PreTagPath; TStr TagNm; TagPath.SplitOnLastCh(PreTagPath, '|', TagNm);
@@ -1328,7 +1243,6 @@ void TXmlDoc::GetTagTokV(const TStr& TagPath, TXmlTokV& XmlTokV) const {
     }
   }
 }
-
 bool TXmlDoc::GetTagTokBoolArgVal(
  const TStr& TagPath, const TStr& ArgNm, const bool& DfVal) const {
   PXmlTok TagTok;
@@ -1336,7 +1250,6 @@ bool TXmlDoc::GetTagTokBoolArgVal(
     return TagTok->GetBoolArgVal(ArgNm, DfVal);}
   else {return DfVal;}
 }
-
 int TXmlDoc::GetTagTokIntArgVal(
  const TStr& TagPath, const TStr& ArgNm, const int& DfVal) const {
   PXmlTok TagTok;
@@ -1344,7 +1257,6 @@ int TXmlDoc::GetTagTokIntArgVal(
     return TagTok->GetIntArgVal(ArgNm, DfVal);}
   else {return DfVal;}
 }
-
 double TXmlDoc::GetTagTokFltArgVal(
  const TStr& TagPath, const TStr& ArgNm, const double& DfVal) const {
   PXmlTok TagTok;
@@ -1352,7 +1264,6 @@ double TXmlDoc::GetTagTokFltArgVal(
     return TagTok->GetFltArgVal(ArgNm, DfVal);}
   else {return DfVal;}
 }
-
 TStr TXmlDoc::GetTagTokStrArgVal(
  const TStr& TagPath, const TStr& ArgNm, const TStr& DfVal) const {
   PXmlTok TagTok;
@@ -1360,7 +1271,6 @@ TStr TXmlDoc::GetTagTokStrArgVal(
     return TagTok->GetStrArgVal(ArgNm, DfVal);}
   else {return DfVal;}
 }
-
 TStr TXmlDoc::GetXmlStr(const TStr& Str){
   TChA ChA=Str;
   TChA XmlChA;
@@ -1379,13 +1289,12 @@ TStr TXmlDoc::GetXmlStr(const TStr& Str){
   }
   return XmlChA;
 }
-
 bool TXmlDoc::SkipTopTag(const PSIn& SIn){
   bool Ok=true;
   TXmlLx Lx(SIn, xspIntact);
   try {
     Lx.GetSym();
-    // [22] prolog ::=  XMLDecl? Misc* (doctypedecl Misc*)?
+
     if (Lx.Sym==xsyXmlDecl){Lx.GetSym();}
     LoadTxtMiscStar(Lx);
     if (Lx.Sym==xsyDocTypeDecl){Lx.GetSym();}
@@ -1397,13 +1306,12 @@ bool TXmlDoc::SkipTopTag(const PSIn& SIn){
   }
   return Ok;
 }
-
 PXmlDoc TXmlDoc::LoadTxt(TXmlLx& Lx){
   PXmlDoc Doc=TXmlDoc::New();
-  // [1]  document ::=  prolog element Misc*
+
   try {
     Lx.GetSym();
-    // [22] prolog ::=  XMLDecl? Misc* (doctypedecl Misc*)?
+
     if (Lx.Sym==xsyXmlDecl){Lx.GetSym();}
     LoadTxtMiscStar(Lx);
     if (Lx.Sym==xsyDocTypeDecl){Lx.GetSym();}
@@ -1417,15 +1325,12 @@ PXmlDoc TXmlDoc::LoadTxt(TXmlLx& Lx){
   }
   return Doc;
 }
-
 PXmlDoc TXmlDoc::LoadTxt(const PSIn& SIn, const TXmlSpacing& Spacing){
   TXmlLx Lx(SIn, Spacing); return LoadTxt(Lx);
 }
-
 PXmlDoc TXmlDoc::LoadTxt(const TStr& FNm, const TXmlSpacing& Spacing){
   PSIn SIn=TFIn::New(FNm); return LoadTxt(SIn, Spacing);
 }
-
 void TXmlDoc::LoadTxt(
  const TStr& FNm, TXmlDocV& XmlDocV, const TXmlSpacing& Spacing){
   XmlDocV.Clr();
@@ -1439,21 +1344,15 @@ void TXmlDoc::LoadTxt(
     else {break;}
   }
 }
-
 PXmlDoc TXmlDoc::LoadStr(const TStr& Str){
   PSIn SIn=TStrIn::New(Str);
   return LoadTxt(SIn);
 }
-
 void TXmlDoc::SaveStr(TStr& Str){
   PSOut SOut=TMOut::New(); TMOut& MOut=*(TMOut*)SOut();
   SaveTxt(SOut);
   Str=MOut.GetAsStr();
 }
-
-/////////////////////////////////////////////////
-// Fast and dirty XML parser
-// very basic it does only <item>string</item>, no comments, no arguments
 TXmlLxSym TXmlParser::GetSym() {
   if (NextSym != xsyUndef) {
     Sym = NextSym;  NextSym=xsyUndef;
@@ -1464,7 +1363,7 @@ TXmlLxSym TXmlParser::GetSym() {
   char Ch;
   while (TCh::IsWs(Ch=GetCh())) { }
   if (Ch == TCh::EofCh) { Sym = xsyEof; return xsyEof; }
-  if (Ch == '<') { // load tag
+  if (Ch == '<') {
     Ch = GetCh();
     if (Ch == '/') { Sym = xsyETag; }
     else { Sym = xsySTag;  SymStr.Push(Ch); }
@@ -1474,7 +1373,7 @@ TXmlLxSym TXmlParser::GetSym() {
       Sym = xsyETag; SymStr[StrLen-1] = 0;
       for (char *c = SymStr.CStr()+StrLen-2; TCh::IsWs(*c); c--) { *c=0; }
     }
-  } else { // load string
+  } else {
     _SymStr.Clr();  _SymStr.Push(Ch);
     while (! RSIn.Eof() && RSIn.PeekCh() != '<') { _SymStr.Push(GetCh()); }
     GetPlainStrFromXmlStr(_SymStr, SymStr);
@@ -1483,13 +1382,11 @@ TXmlLxSym TXmlParser::GetSym() {
   if (Ch == TCh::EofCh) { SymStr.Clr(); Sym = xsyEof; return xsyEof; }
   return Sym;
 }
-
 TXmlLxSym TXmlParser::GetSym(TChA& _SymStr) {
   GetSym();
   _SymStr = SymStr;
   return Sym;
 }
-
 TXmlLxSym TXmlParser::PeekSym() {
   if (NextSym == xsyUndef) {
     const TXmlLxSym TmpSim=Sym;
@@ -1500,34 +1397,28 @@ TXmlLxSym TXmlParser::PeekSym() {
   }
   return NextSym;
 }
-
 TXmlLxSym TXmlParser::PeekSym(TChA& _SymStr) {
   PeekSym();
   _SymStr = NextSymStr;
   return NextSym;
 }
-
 void TXmlParser::SkipTillTag(const TChA& _SymStr) {
   while(PeekSym() != xsyEof) {
     if (NextSymStr == _SymStr) { return; }
     GetSym();
   }
 }
-
-// get <tag>value</tag>
 void TXmlParser::GetTagVal(const TChA& TagStr, TChA& TagVal) {
   EAssertR(GetTag(TagStr) == xsySTag, TStr::Fmt("Expected '<%s>'. Found '%s'", TagStr.CStr(), SymStr.CStr()).CStr());
   EAssertR(GetSym(TagVal) == xsyStr, "Expected string tag.");
   EAssertR(GetTag(TagStr) == xsyETag, TStr::Fmt("Expected '</%s>'. Found '%s'", TagStr.CStr(), SymStr.CStr()).CStr());
 }
-
 TXmlLxSym TXmlParser::GetTag(const TChA& TagStr) {
   GetSym();
   EAssertR(TagStr==SymStr, TStr::Fmt("Expected xml symbol '%s'. Found '%s'",
     TagStr.CStr(), SymStr.CStr()).CStr());
   return Sym;
 }
-
 void TXmlParser::GetPlainStrFromXmlStr(const TChA& XmlStr, TChA& PlainChA) {
   static TChA EntityNm;
   PlainChA.Clr();
@@ -1541,7 +1432,7 @@ void TXmlParser::GetPlainStrFromXmlStr(const TChA& XmlStr, TChA& PlainChA) {
           forever {  Ch++;
             if (TCh::IsHex(*Ch)){ RefChA+=*Ch;  RefCd=RefCd*16+TCh::GetHex(*Ch); }
             else { break; } }
-        } else { // decimal character code
+        } else {
           forever {
             if (TCh::IsNum(*Ch)){ RefChA+=*Ch; RefCd=RefCd*10+TCh::GetNum(*Ch); }
             else { break; } Ch++; }

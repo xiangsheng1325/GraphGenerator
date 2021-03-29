@@ -1,21 +1,15 @@
-/////////////////////////////////////////////////
-// Mathematical-Utilities
 double TMath::E=2.71828182845904523536;
 double TMath::Pi=3.14159265358979323846;
 double TMath::LogOf2=log(double(2));
-
-/////////////////////////////////////////////////
-// Special-Functions
-void TSpecFunc::GammaPSeries/*gser*/(
+void TSpecFunc::GammaPSeries(
  double& gamser, const double& a, const double& x, double& gln){
   static const int ITMAX=100;
   static const double EPS=3.0e-7;
   int n;
   double sum, del, ap;
-
   gln=LnGamma(a);
   if (x <= 0.0){
-    IAssert(x>=0); /*if (x < 0.0) nrerror("x less than 0 in routine gser");*/
+    IAssert(x>=0);
     gamser=0.0;
     return;
   } else {
@@ -30,19 +24,17 @@ void TSpecFunc::GammaPSeries/*gser*/(
         return;
       }
     }
-    Fail; /*nrerror("a too large, ITMAX too small in routine gser");*/
+    Fail;
     return;
   }
 }
-
-void TSpecFunc::GammaQContFrac/*gcf*/(
+void TSpecFunc::GammaQContFrac(
  double& gammcf, const double& a, const double& x, double& gln){
   static const int ITMAX=100;
   static const double EPS=3.0e-7;
   static const double  FPMIN=1.0e-30;
   int i;
   double an, b, c, d, del, h;
-
   gln=LnGamma(a);
   b=x+1.0-a;
   c=1.0/FPMIN;
@@ -61,11 +53,10 @@ void TSpecFunc::GammaQContFrac/*gcf*/(
     if (fabs(del-1.0) < EPS) break;
   }
   IAssert(i<=ITMAX);
-  /*if (i > ITMAX) nrerror("a too large, ITMAX too small in gcf");*/
+
   gammcf=exp(-x+a*log(x)-(gln))*h;
 }
-
-double TSpecFunc::GammaQ/*gammq*/(const double& a, const double& x){
+double TSpecFunc::GammaQ(const double& a, const double& x){
   IAssert((x>=0)&&(a>0));
   double gamser, gammcf, gln;
   if (x<(a+1.0)){
@@ -76,14 +67,12 @@ double TSpecFunc::GammaQ/*gammq*/(const double& a, const double& x){
     return gammcf;
   }
 }
-
-double TSpecFunc::LnGamma/*gammln*/(const double& xx){
+double TSpecFunc::LnGamma(const double& xx){
   double x, y, tmp, ser;
   static double cof[6]={76.18009172947146,-86.50532032941677,
           24.01409824083091,-1.231739572450155,
           0.1208650973866179e-2,-0.5395239384953e-5};
   int j;
-
   y=x=xx;
   tmp=x+5.5;
   tmp -= (x+0.5)*log(tmp);
@@ -91,18 +80,15 @@ double TSpecFunc::LnGamma/*gammln*/(const double& xx){
   for (j=0;j<=5;j++) ser += cof[j]/++y;
   return -tmp+log(2.5066282746310005*ser/x);
 }
-
 double TSpecFunc::LnComb(const int& n, const int& k){
   return LnGamma(n+1)-LnGamma(k+1)-LnGamma(n-k+1);
 }
-
 double TSpecFunc::BetaCf(const double& a, const double& b, const double& x){
   static const double MAXIT=100;
   static const double EPS=3.0e-7;
   static const double FPMIN=1.0e-30;
   int m,m2;
   double aa,c,d,del,h,qab,qam,qap;
-
   qab=a+b;
   qap=a+1.0;
   qam=a-1.0;
@@ -130,14 +116,12 @@ double TSpecFunc::BetaCf(const double& a, const double& b, const double& x){
     h *= del;
     if (fabs(del-1.0) < EPS) break;
   }
-  if (m > MAXIT){Fail;}// a or b too big, or MAXIT too small in betacf
+  if (m > MAXIT){Fail;}
   return h;
 }
-
 double TSpecFunc::BetaI(const double& a, const double& b, const double& x){
   double bt;
-
-  if (x < 0.0 || x > 1.0){Fail;} // Bad x in routine betai
+  if (x < 0.0 || x > 1.0){Fail;}
   if (x == 0.0 || x == 1.0) bt=0.0;
   else
     bt=exp(LnGamma(a+b)-LnGamma(a)-LnGamma(b)+a*log(x)+b*log(1.0-x));
@@ -146,14 +130,12 @@ double TSpecFunc::BetaI(const double& a, const double& b, const double& x){
   else
     return 1.0-bt*BetaCf(b,a,1.0-x)/b;
 }
-
 void TSpecFunc::LinearFit(
  const TVec<TFltPr>& XY, double& A, double& B,
  double& SigA, double& SigB, double& Chi2, double& R2) {
-  // y = a + bx :: SigA (SigB): A's uncertainty; Chi2: std dev on all points
+
   int i;
   double t, sxoss, sx = 0.0, sy = 0.0, st2 = 0.0, ss, sigdat;
-
   A = B = SigA = SigB = Chi2 = 0.0;
   for (i = 0; i < XY.Len(); i++) {
     sx += XY[i].Val1;
@@ -176,7 +158,6 @@ void TSpecFunc::LinearFit(
   SigA *= sigdat;
   SigB *= sigdat;
 
-  // calculate R squared
   { double N = XY.Len(), sXY=0.0, sX=0.0, sY=0.0, sSqX=0.0, sSqY=0.0;
   for (int s =0; s < XY.Len(); s++) {
     sX += XY[s].Val1;  sY += XY[s].Val2;
@@ -189,11 +170,10 @@ void TSpecFunc::LinearFit(
   if (_isnan(A) || ! _finite(A)) A = 0.0;
   if (_isnan(B) || ! _finite(B)) B = 0.0;
 }
-
 void TSpecFunc::PowerFit(const TVec<TFltPr>& XY, double& A, double& B,
  double& SigA, double& SigB, double& Chi2, double& R2) {
-  // y = a x^b :: SigA (SigB): A's uncertainty; Chi2: std dev on all points
-  // log fit
+
+
   double AA, BB;
   TFltPrV LogXY(XY.Len(), 0);
   for (int s = 0; s < XY.Len(); s++) {
@@ -204,20 +184,18 @@ void TSpecFunc::PowerFit(const TVec<TFltPr>& XY, double& A, double& B,
   if (_isnan(AA) || ! _finite(AA)) A = 0.0;
   if (_isnan(BB) || ! _finite(BB)) B = 0.0;
 }
-
 void TSpecFunc::LogFit(const TVec<TFltPr>& XY, double& A, double& B,
  double& SigA, double& SigB, double& Chi2, double& R2) {
-  // Y = A + B*log(X)
+
   TFltPrV LogXY(XY.Len(), 0);
   for (int s = 0; s < XY.Len(); s++) {
     LogXY.Add(TFltPr(log((double)XY[s].Val1), XY[s].Val2));
   }
   TSpecFunc::LinearFit(LogXY, A, B, SigA, SigB, Chi2, R2);
 }
-
 void TSpecFunc::ExpFit(const TVec<TFltPr>& XY, double& A, double& B,
  double& SigA, double& SigB, double& Chi2, double& R2) {
-  // Y = A * exp(B*X)
+
   TFltPrV XLogY(XY.Len(), 0);
   double AA, BB;
   for (int s = 0; s < XY.Len(); s++) {
@@ -227,14 +205,11 @@ void TSpecFunc::ExpFit(const TVec<TFltPr>& XY, double& A, double& B,
   A = exp(AA);
   B = BB;
 }
-
 double TSpecFunc::Entropy(const TIntV& ValV) {
   TFltV NewValV(ValV.Len());
   for (int i = 0; i < ValV.Len(); i++) { NewValV[i] = ValV[i]; }
   return Entropy(NewValV);
 }
-
-// Entropy of a distribution: ValV[i] contains the number of events i
 double TSpecFunc::Entropy(const TFltV& ValV) {
   double Sum=0, Ent=0;
   for (int i = 0; i < ValV.Len(); i++) {
@@ -248,7 +223,6 @@ double TSpecFunc::Entropy(const TFltV& ValV) {
   } else return 1.0;
   return Ent;
 }
-
 void TSpecFunc::EntropyFracDim(const TIntV& ValV, TFltV& EntropyV) {
   TFltV NewValV(ValV.Len());
   for (int i = 0; i < ValV.Len(); i++) { 
@@ -257,10 +231,6 @@ void TSpecFunc::EntropyFracDim(const TIntV& ValV, TFltV& EntropyV) {
   }
   EntropyFracDim(NewValV, EntropyV);
 }
-
-// Entropy fractal dimension. Input is a vector {0,1}^n. 
-// Where 0 means the event did not occur, and 1 means it occured.
-// Works exactly as Mengzi Wang's code.
 void TSpecFunc::EntropyFracDim(const TFltV& ValV, TFltV& EntropyV) {
   TFltV ValV1, ValV2;
   int Pow2 = 1;
@@ -269,7 +239,7 @@ void TSpecFunc::EntropyFracDim(const TFltV& ValV, TFltV& EntropyV) {
   for (int i = 0; i < Pow2; i++) { ValV1[i] = ValV[i]; 
     IAssert(ValV[i]==1.0 || ValV[i] == 0.0); }
   EntropyV.Clr();
-  EntropyV.Add(Entropy(ValV1)); // 2^Pow2 windows
+  EntropyV.Add(Entropy(ValV1));
   while (ValV1.Len() > 2) {
     ValV2.Gen(ValV1.Len() / 2);
     for (int i = 0; i < ValV1.Len(); i++) {
@@ -280,8 +250,6 @@ void TSpecFunc::EntropyFracDim(const TFltV& ValV, TFltV& EntropyV) {
   }
   EntropyV.Reverse();
 }
-
-// solves for p: B = p * log2(p) + (1-p) * log2(1-p)
 double TSpecFunc::EntropyBias(const double& B){
   static TFltFltH BToP;
   if (BToP.Empty()) {
@@ -294,8 +262,6 @@ double TSpecFunc::EntropyBias(const double& B){
   if (BToP.IsKey(TMath::Round(B, 3))) { return BToP.GetDat(TMath::Round(B, 3)); }
   else { return -1.0; }
 }
-
-// MLE of the power-law coefficient
 double TSpecFunc::GetPowerCoef(const TFltV& XValV, double MinX) {
   for (int i = 0; MinX <= 0.0 && i < XValV.Len(); i++) { 
     MinX = XValV[i]; }
@@ -307,7 +273,6 @@ double TSpecFunc::GetPowerCoef(const TFltV& XValV, double MinX) {
   }
   return 1.0 + double(XValV.Len()) / LnSum;
 }
-
 double TSpecFunc::GetPowerCoef(const TFltPrV& XValCntV, double MinX) {
   for (int i = 0; MinX <= 0.0 && i < XValCntV.Len(); i++) { 
     MinX = XValCntV[i].Val1; }
@@ -320,11 +285,8 @@ double TSpecFunc::GetPowerCoef(const TFltPrV& XValCntV, double MinX) {
   }
   return 1.0 + NSamples / LnSum;
 }
-
-/////////////////////////////////////////////////
-// Statistical-Moments
 TMom::TMom(const TFltV& _ValV):
-  //WgtV(_ValV.Len(), 0), ValV(_ValV.Len(), 0),
+
   ValWgtV(_ValV.Len(), 0),
   SumW(), ValSumW(),
   UsableP(false), UnusableVal(-1),
@@ -335,15 +297,14 @@ TMom::TMom(const TFltV& _ValV):
   for (int ValN=0; ValN<_ValV.Len(); ValN++){Add(_ValV[ValN], 1);}
   Def();
 }
-
 void TMom::Def(){
   IAssert(!DefP); DefP=true;
   UsableP=(SumW>0)&&(ValWgtV.Len()>0);
   if (UsableP){
-    // Mn, Mx
+
     Mn=ValWgtV[0].Val1;
     Mx=ValWgtV[0].Val1;
-    // Mean, Variance (Mn, Mx), Standard-Error
+
     Mean=ValSumW/SumW;
     Vari=0;
     if (ValWgtV.Len()>1){
@@ -354,14 +315,14 @@ void TMom::Def(){
         if (Val>Mx){Mx=Val;}
       }
       Vari=Vari/SumW;
-      // SErr=sqrt(Vari/(ValWgtV.Len()*(ValWgtV.Len()-1))); //J: This seems to be wrong
+
       if (Vari > 0.0 && SumW > 0.0) {
-        SErr=sqrt(double(Vari))/sqrt(double(SumW)); //J: This seems to ok: StdDev/sqrt(N)
-      } else { SErr = Mx; } // some big number
+        SErr=sqrt(double(Vari))/sqrt(double(SumW));
+      } else { SErr = Mx; }
     }
-    // Standard-Deviation
+
     SDev=sqrt(double(Vari));
-    // Median
+
     ValWgtV.Sort();
     double CurSumW = 0;
     for (int ValN=0; ValN<ValWgtV.Len(); ValN++){
@@ -371,21 +332,21 @@ void TMom::Def(){
       else if (CurSumW == 0.5*SumW) {
         Median = 0.5 * (ValWgtV[ValN].Val1+ValWgtV[ValN+1].Val1); break; }
     }
-    // Quartile-1 and Quartile-3
+
     Quart1=Quart3=TFlt::Mn;
     CurSumW = 0;
     for (int ValN=0; ValN<ValWgtV.Len(); ValN++){
       CurSumW += ValWgtV[ValN].Val2;
       if (Quart1==TFlt::Mn) {
         if (CurSumW > 0.25*SumW) {  Quart1 = ValWgtV[ValN].Val1; }
-        //else if (CurSumW == 0.25*SumW) { Quart1 = 0.5 * (ValWgtV[ValN].Val1+ValWgtV[ValN+1].Val1); }
+
       } 
       if (Quart3==TFlt::Mn) {
         if (CurSumW > 0.75*SumW) { Quart3 = ValWgtV[ValN].Val1; }
-        //else if (CurSumW == 0.75*SumW) { Quart3 = 0.5 * (ValWgtV[ValN].Val1+ValWgtV[ValN+1].Val1); }
+
       }
     }
-    // Mode (value with max total weight)
+
     THash<TFlt, TFlt> ValWgtH;
     for (int i = 0; i < ValWgtV.Len(); i++) {
       ValWgtH.AddDat(ValWgtV[i].Val1) += ValWgtV[i].Val2; }
@@ -393,7 +354,7 @@ void TMom::Def(){
     for (int v = 0; v < ValWgtH.Len(); v++) {
       if (ValWgtH[v] > MxWgt) { MxWgt=ValWgtH[v]; Mode=ValWgtH.GetKey(v); }
     }
-    // Deciles & Percentiles
+
     CurSumW = 0;
     int DecileN = 1, PercentileN = 1;
     DecileV.Gen(11);  PercentileV.Gen(101);
@@ -409,9 +370,6 @@ void TMom::Def(){
   }
   ValWgtV.Clr();
 }
-
-
-
 double TMom::GetByNm(const TStr& MomNm) const {
   if (MomNm=="Mean"){return GetMean();}
   else if (MomNm=="Vari"){return GetVari();}
@@ -433,7 +391,6 @@ double TMom::GetByNm(const TStr& MomNm) const {
   else if (MomNm=="Decile10"){return GetDecile(10);}
   else {Fail; return 0;}
 }
-
 TStr TMom::GetStrByNm(const TStr& MomNm, char* FmtStr) const {
   if (IsUsable()){
     if (FmtStr==NULL){
@@ -445,7 +402,6 @@ TStr TMom::GetStrByNm(const TStr& MomNm, char* FmtStr) const {
     return "X";
   }
 }
-
 TStr TMom::GetStr(
  const char& SepCh, const char& DelimCh,
  const bool& DecileP, const bool& PercentileP, const TStr& FmtStr) const {
@@ -456,9 +412,9 @@ TStr TMom::GetStr(
     ChA+="Min"; ChA+=DelimCh; ChA+=TFlt::GetStr(GetMn(), FmtStr.CStr()); ChA+=SepCh;
     ChA+="Max"; ChA+=DelimCh; ChA+=TFlt::GetStr(GetMx(), FmtStr.CStr()); ChA+=SepCh;
     ChA+="Mean"; ChA+=DelimCh; ChA+=TFlt::GetStr(GetMean(), FmtStr.CStr()); ChA+=SepCh;
-    //ChA+="Vari"; ChA+=DelimCh; ChA+=TFlt::GetStr(GetVari(), FmtStr.CStr()); ChA+=SepCh;
+
     ChA+="SDev"; ChA+=DelimCh; ChA+=TFlt::GetStr(GetSDev(), FmtStr.CStr()); ChA+=SepCh;
-    //ChA+="SErr"; ChA+=DelimCh; ChA+=TFlt::GetStr(GetSErr(), FmtStr.CStr()); ChA+=SepCh;
+
     ChA+="Quart1"; ChA+=DelimCh; ChA+=TFlt::GetStr(GetQuart1(), FmtStr.CStr()); ChA+=SepCh;
     ChA+="Median"; ChA+=DelimCh; ChA+=TFlt::GetStr(GetMedian(), FmtStr.CStr()); ChA+=SepCh;
     ChA+="Quart3"; ChA+=DelimCh; ChA+=TFlt::GetStr(GetQuart3(), FmtStr.CStr()); ChA+=SepCh;
@@ -482,7 +438,6 @@ TStr TMom::GetStr(
   }
   return ChA;
 }
-
 TStr TMom::GetNmVStr(const TStr& VarPfx,
  const char& SepCh, const bool& DecileP, const bool& PercentileP){
   TChA ChA;
@@ -490,9 +445,9 @@ TStr TMom::GetNmVStr(const TStr& VarPfx,
   ChA+=VarPfx; ChA+="Min"; ChA+=SepCh;
   ChA+=VarPfx; ChA+="Max"; ChA+=SepCh;
   ChA+=VarPfx; ChA+="Mean"; ChA+=SepCh;
-  //ChA+=VarPfx; ChA+="Vari"; ChA+=SepCh;
+
   ChA+=VarPfx; ChA+="SDev"; ChA+=SepCh;
-  //ChA+=VarPfx; ChA+="SErr"; ChA+=SepCh;
+
   ChA+=VarPfx; ChA+="Quart1"; ChA+=SepCh;
   ChA+=VarPfx; ChA+="Median"; ChA+=SepCh;
   ChA+=VarPfx; ChA+="Quart3";
@@ -512,7 +467,6 @@ TStr TMom::GetNmVStr(const TStr& VarPfx,
   }
   return ChA;
 }
-
 TStr TMom::GetValVStr(
  const char& SepCh, const bool& DecileP, const bool& PercentileP) const {
   TChA ChA;
@@ -521,9 +475,9 @@ TStr TMom::GetValVStr(
     ChA+=TFlt::GetStr(GetMn()); ChA+=SepCh;
     ChA+=TFlt::GetStr(GetMx()); ChA+=SepCh;
     ChA+=TFlt::GetStr(GetMean()); ChA+=SepCh;
-    //ChA+=TFlt::GetStr(GetVari()); ChA+=SepCh;
+
     ChA+=TFlt::GetStr(GetSDev()); ChA+=SepCh;
-    //ChA+=TFlt::GetStr(GetSErr()); ChA+=SepCh;
+
     ChA+=TFlt::GetStr(GetQuart1()); ChA+=SepCh;
     ChA+=TFlt::GetStr(GetMedian()); ChA+=SepCh;
     ChA+=TFlt::GetStr(GetQuart3()); ChA+=SepCh;
@@ -548,21 +502,16 @@ TStr TMom::GetValVStr(
   }
   return ChA;
 }
-
-/////////////////////////////////////////////////
-// Correlation
 TCorr::TCorr(const TFltV& ValV1, const TFltV& ValV2):
   ValVLen(ValV1.Len()), CorrCf(), CorrCfPrb(), FisherZ(){
   static const double TINY=1.0e-20;
   IAssert(ValV1.Len()==ValV2.Len());
 
-  // calculate the means
   double MeanVal1=0; double MeanVal2=0;
   {for (int ValN=0; ValN<ValVLen; ValN++){
     MeanVal1+=ValV1[ValN]; MeanVal2+=ValV2[ValN];}}
   MeanVal1/=ValVLen; MeanVal2/=ValVLen;
 
-  // calculate correlation coefficient
   double yt, xt;
   double syy=0.0; double sxy=0.0; double sxx=0.0;
   {for (int ValN=0; ValN<ValVLen; ValN++){
@@ -573,20 +522,17 @@ TCorr::TCorr(const TFltV& ValV1, const TFltV& ValV2):
     sxy+=xt*yt;
   }}
   if (sxx*syy==0){
-    CorrCf=0; //** not in numerical recipes - check why (pojavi se, ko so same nicle)
+    CorrCf=0;
   } else {
     CorrCf=sxy/sqrt(sxx*syy);
   }
-  // calculate correlation coefficient significance level
+
   double df=ValVLen-2;
   double t=CorrCf*sqrt(df/((1.0-CorrCf+TINY)*(1.0+CorrCf+TINY)));
   CorrCfPrb=TSpecFunc::BetaI(0.5*df,0.5,df/(df+t*t));
-  // calculate Fisher's Z transformation
+
   FisherZ=0.5*log((1.0+(CorrCf)+TINY)/(1.0-(CorrCf)+TINY));
 }
-
-/////////////////////////////////////////////////
-// Statistical Tests
 void TStatTest::AveVar(const TFltV& ValV, double& Ave, double& Var){
   Ave=0;
   for (int ValN=0; ValN<ValV.Len(); ValN++){
@@ -601,7 +547,6 @@ void TStatTest::AveVar(const TFltV& ValV, double& Ave, double& Var){
   }
   Var=(Var-ep*ep/ValV.Len())/(ValV.Len()-1);
 }
-
 double TStatTest::KsProb(const double& Alam) {
   const double EPS1 = 0.001;
   const double EPS2 = 1.0e-8;
@@ -616,7 +561,6 @@ double TStatTest::KsProb(const double& Alam) {
   }
   return 1.0;
 }
-
 void TStatTest::ChiSquareOne(
  const TFltV& ObservedBinV, const TFltV& ExpectedBinV,
  double& ChiSquareVal, double& SignificancePrb){
@@ -633,7 +577,6 @@ void TStatTest::ChiSquareOne(
   SignificancePrb=
    TSpecFunc::GammaQ(0.5*(DegreesOfFreedom), 0.5*(ChiSquareVal));
 }
-
 void TStatTest::ChiSquareTwo(
  const TFltV& ObservedBin1V, const TFltV& ObservedBin2V,
  double& ChiSquareVal, double& SignificancePrb){
@@ -653,14 +596,8 @@ void TStatTest::ChiSquareTwo(
   SignificancePrb=
    TSpecFunc::GammaQ(0.5*(DegreesOfFreedom),0.5*(ChiSquareVal));
 }
-
 void TStatTest::TTest(
  const TFltV& ValV1, const TFltV& ValV2, double& TTestVal, double& TTestPrb){
-  /*double Ave1; double Var1;
-  AveVar(ValV1, Ave1, Var1);
-  double Ave2; double Var2;
-  AveVar(ValV2, Ave2, Var2);*/
-
   PMom Val1Mom=TMom::New(ValV1);
   PMom Val2Mom=TMom::New(ValV2);
   double ave1=Val1Mom->GetMean();
@@ -669,12 +606,10 @@ void TStatTest::TTest(
   double var2=Val2Mom->GetVari();
   int n1=ValV1.Len();
   int n2=ValV2.Len();
-
   TTestVal=(ave1-ave2)/sqrt(var1/n1+var2/n2);
   double df=TMath::Sqr(var1/n1+var2/n2)/(TMath::Sqr(var1/n1)/(n1-1)+TMath::Sqr(var2/n2)/(n2-1));
   TTestPrb=TSpecFunc::BetaI(0.5*df, 0.5, df/(df+TMath::Sqr(TTestVal)));
 }
-
 void TStatTest::KsTest(const TFltV& ValV1, const TFltV& ValV2, double& DStat, double& PVal) {
   IAssert(ValV1.IsSorted() && ValV2.IsSorted());
   int i1=0, i2=0;
@@ -701,7 +636,6 @@ void TStatTest::KsTest(const TFltV& ValV1, const TFltV& ValV2, double& DStat, do
   const double En = sqrt( N1*N2 / (N1+N2));
   PVal = TStatTest::KsProb((En+0.12+0.11/En)*DStat);
 }
-
 void TStatTest::KsTest(const TFltPrV& ValCntV1, const TFltPrV& ValCntV2, double& DStat, double& PVal) {
   IAssert(ValCntV1.IsSorted() && ValCntV2.IsSorted());
   int i1=0, i2=0;
@@ -710,7 +644,6 @@ void TStatTest::KsTest(const TFltPrV& ValCntV1, const TFltPrV& ValCntV2, double&
   for (int i = 0; i < ValCntV1.Len(); i++) N1 += ValCntV1[i].Val2;
   for (int i = 0; i < ValCntV2.Len(); i++) N2 += ValCntV2[i].Val2;
   if (! (N1 > 0.0 && N2 > 0.0)) { DStat = 1.0;  PVal = 0.0;  return; }
-
   while (i1 < ValCntV1.Len() && i2 < ValCntV2.Len()) {
     const double X1 = ValCntV1[i1].Val1;
     const double X2 = ValCntV2[i2].Val1;
@@ -729,9 +662,6 @@ void TStatTest::KsTest(const TFltPrV& ValCntV1, const TFltPrV& ValCntV2, double&
   const double En = sqrt( N1*N2 / (N1+N2));
   PVal = TStatTest::KsProb((En+0.12+0.11/En)*DStat);
 }
-
-/////////////////////////////////////////////////
-// Combinations
 bool TComb::GetNext(){
   if (ItemV.Len()==0){
     ItemV.Gen(Order, Order);
@@ -755,7 +685,6 @@ bool TComb::GetNext(){
     }
   }
 }
-
 int TComb::GetCombs() const {
   int LCombs=1; int HCombs=1;
   for (int OrderN=0; OrderN<Order; OrderN++){
@@ -763,7 +692,6 @@ int TComb::GetCombs() const {
   int Combs=HCombs/LCombs;
   return Combs;
 }
-
 void TComb::Wr(){
   printf("%d:[", GetCombN());
   for (int OrderN=0; OrderN<Order; OrderN++){
@@ -772,9 +700,6 @@ void TComb::Wr(){
   }
   printf("]\n");
 }
-
-/////////////////////////////////////////////////
-// Linear-Regression
 PLinReg TLinReg::New(const TFltVV& _XVV, const TFltV& _YV, const TFltV& _SigV){
   PLinReg LinReg=PLinReg(new TLinReg());
   LinReg->XVV=_XVV;
@@ -796,7 +721,6 @@ PLinReg TLinReg::New(const TFltVV& _XVV, const TFltV& _YV, const TFltV& _SigV){
   LinReg->NR_lfit();
   return LinReg;
 }
-
 void TLinReg::NR_covsrt(
  TFltVV& CovarVV, const int& Vars, const TIntV& ia, const int& mfit){
   for (int i=mfit+1; i<=Vars; i++){
@@ -812,11 +736,9 @@ void TLinReg::NR_covsrt(
     }
   }
 }
-
 void TLinReg::NR_gaussj(TFltVV& a, const int& n, TFltVV& b, const int& m){
   int i, icol=0, irow=0, j, k, l, ll;
   double big, dum, pivinv;
-
   TIntV indxc(n+1);
   TIntV indxr(n+1);
   TIntV ipiv(n+1);
@@ -867,11 +789,9 @@ void TLinReg::NR_gaussj(TFltVV& a, const int& n, TFltVV& b, const int& m){
     }
   }
 }
-
 void TLinReg::NR_lfit(){
   int i,j,k,l,m,mfit=0;
   double ym,wt,sum,sig2i;
-
   TIntV ia(Vars+1); for (i=1; i<=Vars; i++){ia[i]=1;}
   TFltVV beta(Vars+1, 1+1);
   TFltV afunc(Vars+1);
@@ -883,7 +803,7 @@ void TLinReg::NR_lfit(){
     beta.At(j, 1)=0.0;
   }
   for (i=1; i<=Recs; i++){
-    GetXV(i, afunc); // funcs(XVV[i],afunc,Vars);
+    GetXV(i, afunc);
     ym=GetY(i);
     if (mfit<Vars){
       for (j=1;j<=Vars;j++){
@@ -909,13 +829,12 @@ void TLinReg::NR_lfit(){
   }
   ChiSq=0.0;
   for (i=1; i<=Recs; i++){
-    GetXV(i, afunc); // funcs(XVV[i],afunc,Vars);
+    GetXV(i, afunc);
     for (sum=0.0, j=1; j<=Vars; j++){sum+=CfV[j]*afunc[j];}
     ChiSq+=TMath::Sqr((GetY(i)-sum)/GetSig(i));
   }
   NR_covsrt(CovarVV, Vars, ia, mfit);
 }
-
 void TLinReg::Wr() const {
   printf("\n%11s %21s\n","parameter","uncertainty");
   for (int i=0; i<Vars;i++){
@@ -923,7 +842,6 @@ void TLinReg::Wr() const {
      i+1, GetCf(i), GetCfUncer(i));
   }
   printf("chi-squared = %12f\n", GetChiSq());
-
   printf("full covariance matrix\n");
   {for (int i=0;i<Vars;i++){
     for (int j=0;j<Vars;j++){
@@ -931,9 +849,6 @@ void TLinReg::Wr() const {
     printf("\n");
   }}
 }
-
-/////////////////////////////////////////////////
-// Singular-Value-Decomposition
 PSvd TSvd::New(const TFltVV& _XVV, const TFltV& _YV, const TFltV& _SigV){
   PSvd Svd=PSvd(new TSvd());
   Svd->XVV=_XVV;
@@ -955,7 +870,6 @@ PSvd TSvd::New(const TFltVV& _XVV, const TFltV& _YV, const TFltV& _SigV){
   Svd->NR_svdfit();
   return Svd;
 }
-
 double TSvd::NR_pythag(double a, double b){
   double absa,absb;
   absa=fabs(a);
@@ -966,11 +880,9 @@ double TSvd::NR_pythag(double a, double b){
     return (absb == 0.0 ? 0.0 : absb*sqrt(1.0+TMath::Sqr(absa/absb)));
   }
 }
-
 void TSvd::NR_svdcmp(TFltVV& a, int m, int n, TFltV& w, TFltVV& v){
   int flag,i,its,j,jj,k,l=0,nm;
   double anorm,c,f,g,h,s,scale,x,y,z;
-
   TFltV rv1(n+1);
   g=scale=anorm=0.0;
   for (i=1;i<=n;i++) {
@@ -1143,12 +1055,10 @@ void TSvd::NR_svdcmp(TFltVV& a, int m, int n, TFltV& w, TFltVV& v){
     }
   }
 }
-
 void TSvd::NR_svbksb(
  TFltVV& u, TFltV& w, TFltVV& v, int m, int n, TFltV& b, TFltV& x){
   int jj,j,i;
   double s;
-
   TFltV tmp(n+1);
   for (j=1;j<=n;j++) {
     s=0.0;
@@ -1164,11 +1074,9 @@ void TSvd::NR_svbksb(
     x[j]=s;
   }
 }
-
 void TSvd::NR_svdvar(TFltVV& v, int ma, TFltV& w, TFltVV& cvm){
   int k,j,i;
   double sum;
-
   TFltV wti(ma+1);
   for (i=1;i<=ma;i++) {
     wti[i]=0.0;
@@ -1181,19 +1089,17 @@ void TSvd::NR_svdvar(TFltVV& v, int ma, TFltV& w, TFltVV& cvm){
     }
   }
 }
-
 void TSvd::NR_svdfit(){
   int j,i;
   double wmax,tmp,thresh,sum;
   double TOL=1.0e-5;
-
   TFltVV u(Recs+1, Vars+1);
   TFltVV v(Vars+1, Vars+1);
   TFltV w(Vars+1);
   TFltV b(Recs+1);
   TFltV afunc(Vars+1);
   for (i=1;i<=Recs;i++) {
-    GetXV(i, afunc); // (*funcs)(x[i],afunc,Vars);
+    GetXV(i, afunc);
     tmp=1.0/GetSig(i);
     for (j=1;j<=Vars;j++){u.At(i,j)=afunc[j]*tmp;}
     b[i]=GetY(i)*tmp;
@@ -1208,31 +1114,27 @@ void TSvd::NR_svdfit(){
   NR_svbksb(u,w,v,Recs,Vars,b,CfV);
   ChiSq=0.0;
   for (i=1;i<=Recs;i++) {
-    GetXV(i, afunc); // (*funcs)(x[i],afunc,Vars);
+    GetXV(i, afunc);
     for (sum=0.0,j=1;j<=Vars;j++){sum += CfV[j]*afunc[j];}
     ChiSq += (tmp=(GetY(i)-sum)/GetSig(i),tmp*tmp);
   }
-  // covariance matrix calculation
+
   CovarVV.Gen(Vars+1, Vars+1);
   NR_svdvar(v, Vars, w, CovarVV);
 }
-
 void TSvd::GetCfV(TFltV& _CfV){
   _CfV=CfV; _CfV.Del(0);
 }
-
 void TSvd::GetCfUncerV(TFltV& CfUncerV){
   CfUncerV.Gen(Vars);
   for (int VarN=0; VarN<Vars; VarN++){
     CfUncerV[VarN]=GetCfUncer(VarN);
   }
 }
-
-// all vectors (matrices) start with 0 
 void TSvd::Svd(const TFltVV& InMtx, TFltVV& LSingV, TFltV& SingValV, TFltVV& RSingV) {
-  //LSingV = InMtx;
+
   LSingV.Gen(InMtx.GetYDim()+1, InMtx.GetYDim()+1);
-  // create 1 based adjacency matrix
+
   for (int x = 0; x < InMtx.GetXDim(); x++) {
     for (int y = 0; y < InMtx.GetYDim(); y++) {
       LSingV.At(x+1, y+1) = InMtx.At(x, y);
@@ -1241,25 +1143,21 @@ void TSvd::Svd(const TFltVV& InMtx, TFltVV& LSingV, TFltV& SingValV, TFltVV& RSi
   RSingV.Gen(InMtx.GetYDim()+1, InMtx.GetYDim()+1);
   SingValV.Gen(InMtx.GetYDim()+1);
   TSvd::NR_svdcmp(LSingV, InMtx.GetXDim(), InMtx.GetYDim(), SingValV, RSingV);
-  // 0-th singular value/vector is full of zeros, delete it
+
   SingValV.Del(0);
   LSingV.DelX(0); LSingV.DelY(0);
   RSingV.DelX(0); RSingV.DelY(0);
 }
-
-// InMtx1 is 1-based (0-th row/column are full of zeros)
-// returned singular vectors/values are 0 based
 void TSvd::Svd1Based(const TFltVV& InMtx1, TFltVV& LSingV, TFltV& SingValV, TFltVV& RSingV) {
   LSingV = InMtx1;
   SingValV.Gen(InMtx1.GetYDim());
   RSingV.Gen(InMtx1.GetYDim(), InMtx1.GetYDim());
   TSvd::NR_svdcmp(LSingV, InMtx1.GetXDim()-1, InMtx1.GetYDim()-1, SingValV, RSingV);
-  // 0-th singular value/vector is full of zeros, delete it
+
   SingValV.Del(0);
   LSingV.DelX(0); LSingV.DelY(0);
   RSingV.DelX(0); RSingV.DelY(0);
 }
-
 void TSvd::Wr() const {
   printf("\n%11s %21s\n","parameter","uncertainty");
   for (int i=0; i<Vars;i++){
@@ -1267,7 +1165,6 @@ void TSvd::Wr() const {
      i+1, GetCf(i), GetCfUncer(i));
   }
   printf("chi-squared = %12f\n", GetChiSq());
-
   printf("full covariance matrix\n");
   {for (int i=0;i<Vars;i++){
     for (int j=0;j<Vars;j++){
@@ -1275,18 +1172,15 @@ void TSvd::Wr() const {
     printf("\n");
   }}
 }
-
-/////////////////////////////////////////////////
-// Histogram
 void THist::Add(const double& Val, const bool& OnlyInP) {
-	// get bucket number
+
     const int BucketN = int(floor((Val - MnVal) / BucketSize));
 	if (OnlyInP) { 
-		// value should be inside
+
 		EAssert(MnVal <= Val && Val <= MxVal);
 		BucketV[BucketN]++;
 	} else {
-		// value does not need to be inside
+
 		if (BucketN < 0) {
 			BucketV[0]++;
 		} else if (BucketN < BucketV.Len()) {
@@ -1295,10 +1189,9 @@ void THist::Add(const double& Val, const bool& OnlyInP) {
 			BucketV.Last()++;
 		}
 	}
-	// for computing percentage
+
 	Vals++;
 }
-
 void THist::SaveStat(const TStr& ValNm, TSOut& FOut) const {
     FOut.PutStrLn("#" + ValNm + ": " + Vals.GetStr());
     const int Buckets = BucketV.Len() - 1;
@@ -1309,6 +1202,4 @@ void THist::SaveStat(const TStr& ValNm, TSOut& FOut) const {
     if (BucketV.Last() > 0) {
         FOut.PutStrLn(TStr::Fmt("%d-\t%d", BucketSize*Buckets, BucketV.Last()()));
     }
-
 }
-

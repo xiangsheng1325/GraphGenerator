@@ -1,13 +1,7 @@
 #include "bd.h"
-
-/////////////////////////////////////////////////
-// Forward
 class TILx;
 class TOLx;
 ClassHdTP(TXmlTok, PXmlTok);
-
-/////////////////////////////////////////////////
-// Random
 class TRnd{
 public:
   static const int RndSeed;
@@ -23,10 +17,8 @@ public:
   void Save(TSOut& SOut) const {SOut.Save(Seed);}
   void LoadXml(const PXmlTok& XmlTok, const TStr& Nm);
   void SaveXml(TSOut& SOut, const TStr& Nm) const;
-
   TRnd& operator=(const TRnd& Rnd){Seed=Rnd.Seed; return *this;}
   bool operator==(const TRnd&) const {Fail; return false;}
-
   double GetUniDev(){return GetNextSeed()/double(m);}
   int GetUniDevInt(const int& Range=0);
   int GetUniDevInt(const int& MnVal, const int& MxVal){
@@ -38,43 +30,36 @@ public:
   double GetNrmDev(
    const double& Mean, const double& SDev, const double& Mn, const double& Mx);
   double GetExpDev();
-  double GetExpDev(const double& Lambda); // mean=1/lambda
+  double GetExpDev(const double& Lambda);
   double GetGammaDev(const int& Order);
   double GetPoissonDev(const double& Mean);
   double GetBinomialDev(const double& Prb, const int& Trials);
   int GetGeoDev(const double& Prb){
     return 1+(int)floor(log(1.0-GetUniDev())/log(1.0-Prb));}
-  double GetPowerDev(const double& AlphaSlope){ // power-law degree distribution (AlphaSlope>0)
+  double GetPowerDev(const double& AlphaSlope){
     IAssert(AlphaSlope>1.0);
     return pow(1.0-GetUniDev(), -1.0/(AlphaSlope-1.0));}
-  double GetRayleigh(const double& Sigma) { // 1/sqrt(alpha) = sigma
+  double GetRayleigh(const double& Sigma) {
     IAssert(Sigma>0.0);
     return Sigma*sqrt(-2*log(1-GetUniDev()));}
-  double GetWeibull(const double& K, const double& Lambda) { // 1/alpha = lambda
+  double GetWeibull(const double& K, const double& Lambda) {
     IAssert(Lambda>0.0 && K>0.0);
     return Lambda*pow(-log(1-GetUniDev()), 1.0/K);}
-  //void GetSphereDev(const int& Dim, TFltV& ValV);
-
   void PutSeed(const int& _Seed);
   int GetSeed() const {return Seed;}
   void Randomize(){PutSeed(RndSeed);}
   void Move(const int& Steps);
   bool Check();
-
   static double GetUniDevStep(const int& Seed, const int& Steps){
     TRnd Rnd(Seed); Rnd.Move(Steps); return Rnd.GetUniDev();}
   static double GetNrmDevStep(const int& Seed, const int& Steps){
     TRnd Rnd(Seed); Rnd.Move(Steps); return Rnd.GetNrmDev();}
   static double GetExpDevStep(const int& Seed, const int& Steps){
     TRnd Rnd(Seed); Rnd.Move(Steps); return Rnd.GetExpDev();}
-
   static TRnd LoadTxt(TILx& Lx);
   void SaveTxt(TOLx& Lx) const;
 };
-
-/////////////////////////////////////////////////
-// Memory
-ClassTP(TMem, PMem)//{
+ClassTP(TMem, PMem)
 private:
   int MxBfL, BfL;
   char* Bf;
@@ -104,7 +89,6 @@ public:
     SOut.Save(MxBfL); SOut.Save(BfL); SOut.SaveBf(Bf, BfL);}
   void LoadXml(const PXmlTok& XmlTok, const TStr& Nm);
   void SaveXml(TSOut& SOut, const TStr& Nm) const;
-
   TMem& operator=(const TMem& Mem){
     if (this!=&Mem){
       if (Bf!=NULL){delete[] Bf;}
@@ -119,7 +103,6 @@ public:
   char& operator[](const int& ChN) const {
     Assert((0<=ChN)&&(ChN<BfL)); return Bf[ChN];}
   int GetMemUsed() const {return int(2*sizeof(int)+sizeof(char*)+MxBfL);}
-
   void Gen(const int& _BfL){
     Clr(); Resize(_BfL); BfL=_BfL;}
   void GenZeros(const int& _BfL){
@@ -137,24 +120,18 @@ public:
     if ((0<=_BfL)&&(_BfL<=BfL)){BfL=_BfL;}}
   void Push(const char& Ch){operator+=(Ch);}
   char Pop(){IAssert(BfL>0); BfL--; return Bf[BfL];}
-
   bool DoFitStr(const TStr& Str) const;
-  //int AddStr(const TStr& Str);
   void AddBf(const void* Bf, const int& BfL);
   char* GetBf() const {return Bf;}
   TStr GetAsStr(const char& NewNullCh='\0') const;
   PSIn GetSIn() const {
     TMOut MOut(BfL); MOut.SaveBf(Bf, BfL); return MOut.GetSIn();}
-
   static void LoadMem(const PSIn& SIn, TMem& Mem){
     Mem.Clr(); Mem.Gen(SIn->Len()); SIn->GetBf(Mem.Bf, SIn->Len());}
   static void LoadMem(const PSIn& SIn, const PMem& Mem){
     Mem->Clr(); Mem->Gen(SIn->Len()); SIn->GetBf(Mem->Bf, SIn->Len());}
   void SaveMem(const PSOut& SOut) const {SOut->SaveBf(Bf, Len());}
 };
-
-/////////////////////////////////////////////////
-// Input-Memory
 class TMemIn: public TSIn{
 private:
   PMem Mem;
@@ -167,7 +144,6 @@ public:
   static PSIn New(const PMem& Mem){
     TMemIn* MemIn=new TMemIn(*Mem); MemIn->Mem=Mem; return PSIn(MemIn);}
   ~TMemIn(){}
-
   bool Eof(){return BfC==BfL;}
   int Len() const {return BfL-BfC;}
   char GetCh(){Assert(BfC<BfL); return Bf[BfC++];}
@@ -176,9 +152,6 @@ public:
   void Reset(){Cs=TCs(); BfC=0;}
   bool GetNextLnBf(TChA& LnChA);
 };
-
-/////////////////////////////////////////////////
-// Output-Memory
 class TMemOut: public TSOut{
 private:
   PMem Mem;
@@ -189,15 +162,11 @@ public:
   static PSOut New(const PMem& Mem){
     return new TMemOut(Mem);}
   ~TMemOut(){}
-
   int PutCh(const char& Ch){
     Mem->operator+=(Ch); return Ch;}
   int PutBf(const void* LBf, const TSize& LBfL);
   void Flush(){}
 };
-
-/////////////////////////////////////////////////
-// Char-Array
 class TChA{
 private:
   int MxBfL, BfL;
@@ -221,11 +190,10 @@ public:
     SIn.Load(MxBfL); SIn.Load(BfL); SIn.Load(Bf, MxBfL, BfL);}
   void Load(TSIn& SIn){ delete[] Bf;
     SIn.Load(MxBfL); SIn.Load(BfL); SIn.Load(Bf, MxBfL, BfL);}
-  void Save(TSOut& SOut, const bool& SaveCompact=true) const { //J:
+  void Save(TSOut& SOut, const bool& SaveCompact=true) const {
     SOut.Save(SaveCompact?BfL:MxBfL); SOut.Save(BfL); SOut.Save(Bf, BfL);}
   void LoadXml(const PXmlTok& XmlTok, const TStr& Nm);
   void SaveXml(TSOut& SOut, const TStr& Nm) const;
-
   TChA& operator=(const TChA& ChA);
   TChA& operator=(const TStr& Str);
   TChA& operator=(const char* CStr);
@@ -236,7 +204,6 @@ public:
   bool operator!=(const char* _CStr) const {return strcmp(CStr(), _CStr)!=0;}
   bool operator!=(const char& Ch) const {return !((BfL==1)&&(Bf[0]==Ch));}
   bool operator<(const TChA& ChA) const {return strcmp(CStr(), ChA.CStr())<0;}
-
   TChA& operator+=(const TMem& Mem);
   TChA& operator+=(const TChA& ChA);
   TChA& operator+=(const TStr& Str);
@@ -249,12 +216,10 @@ public:
   char& operator[](const int& ChN){
     Assert((0<=ChN)&&(ChN<BfL)); return Bf[ChN];}
   int GetMemUsed() const {return int(2*sizeof(int)+sizeof(char*)+sizeof(char)*MxBfL);}
-
   char* operator ()(){return Bf;}
   const char* operator ()() const {return Bf;}
   char* CStr() {return Bf;}
   const char* CStr() const {return Bf;}
-
   void Clr(){Bf[BfL=0]=0;}
   int Len() const {return BfL;}
   bool Empty() const {return BfL==0;}
@@ -267,7 +232,6 @@ public:
   void Trunc(const int& _BfL){
     if ((0<=_BfL)&&(_BfL<=BfL)){Bf[BfL=_BfL]=0;}}
   void Reverse();
-
   void AddCh(const char& Ch, const int& MxLen=-1){
     if ((MxLen==-1)||(BfL<MxLen)){operator+=(Ch);}}
   void AddChTo(const char& Ch, const int& ToChN){
@@ -280,9 +244,7 @@ public:
   char GetCh(const int& ChN) const {return operator[](ChN);}
   char LastCh() const { Assert(1<=BfL); return Bf[BfL-1]; }
   char LastLastCh() const { Assert(2<=BfL); return Bf[BfL-2]; }
-
   TChA GetSubStr(const int& BChN, const int& EChN) const;
-
   int CountCh(const char& Ch, const int& BChN=0) const;
   int SearchCh(const char& Ch, const int& BChN=0) const;
   int SearchChBack(const char& Ch, int BChN=-1) const;
@@ -296,7 +258,6 @@ public:
   bool IsSuffix(const char* CStr) const;
   bool IsSuffix(const TStr& Str) const;
   bool IsSuffix(const TChA& Str) const;
-
   bool IsChIn(const char& Ch) const {return SearchCh(Ch)!=-1;}
   void ChangeCh(const char& SrcCh, const char& DstCh);
   TChA& ToUc();
@@ -305,20 +266,12 @@ public:
   void CompressWs();
   void Swap(const int& ChN1, const int& ChN2);
   void Swap(TChA& ChA);
-
   int GetPrimHashCd() const;
   int GetSecHashCd() const;
-
   static void LoadTxt(const PSIn& SIn, TChA& ChA);
   void SaveTxt(const PSOut& SOut) const;
   
-  //friend TChA operator+(const TChA& LStr, const TChA& RStr);
-  //friend TChA operator+(const TChA& LStr, const TStr& RStr);
-  //friend TChA operator+(const TChA& LStr, const char* RCStr);
 };
-
-/////////////////////////////////////////////////
-// Input-Char-Array
 class TChAIn: public TSIn{
 private:
   const char* Bf;
@@ -331,7 +284,6 @@ public:
   TChAIn(const TChA& ChA, const int& _BfC=0);
   static PSIn New(const TChA& ChA){return PSIn(new TChAIn(ChA));}
   ~TChAIn(){}
-
   bool Eof(){return BfC==BfL;}
   int Len() const {return BfL-BfC;}
   char GetCh(){Assert(BfC<BfL); return Bf[BfC++];}
@@ -340,9 +292,6 @@ public:
   void Reset(){Cs=TCs(); BfC=0;}
   bool GetNextLnBf(TChA& LnChA);
 };
-
-/////////////////////////////////////////////////
-// Ref-String
 class TRStr{
 public:
   char* Bf;
@@ -371,23 +320,18 @@ public:
   void Save(TSOut& SOut, const bool& IsSmall) const {
     if (IsSmall){SOut.Save(Bf);}
     else {int BfL=int(strlen(Bf)); SOut.Save(BfL); SOut.Save(Bf, BfL);}}
-
   TRStr& operator=(const TRStr&){Fail; return *this;}
   int GetMemUsed() const {return int(sizeof(int))+int(strlen(Bf));}
-
   void MkRef(){Refs++;}
   void UnRef(){Assert(Refs>0); if (--Refs==0){delete this;}}
-
   const char* CStr() const {return Bf;}
   char* CStr() {return Bf;}
   bool Empty() const {return Bf[0]==0;}
   int Len() const {return int(strlen(Bf));}
-
   void PutCh(const int& ChN, const char& Ch){
     Assert((0<=ChN)&&(ChN<Len())); Bf[ChN]=Ch;}
   char GetCh(const int& ChN) const {
     Assert((0<=ChN)&&(ChN<Len())); return Bf[ChN];}
-
   bool IsUc() const;
   void ToUc();
   bool IsLc() const;
@@ -395,20 +339,14 @@ public:
   void ToCap();
   void ConvUsFromYuAscii();
   static int CmpI(const char* CStr1, const char* CStr2);
-
   int GetPrimHashCd() const;
   int GetSecHashCd() const;
-
   static TRStr* GetNullRStr(){
     static TRStr NullRStr; Assert(NullRStr.Bf!=NULL); return &NullRStr;}
 };
-
-/////////////////////////////////////////////////
-// String
 class TStr;
 template <class TVal, class TSizeTy> class TVec;
 typedef TVec<TStr, int> TStrV;
-
 class TStr{
 private:
   TRStr* RStr;
@@ -441,7 +379,6 @@ public:
     RStr->Save(SOut, IsSmall);}
   void LoadXml(const PXmlTok& XmlTok, const TStr& Nm);
   void SaveXml(TSOut& SOut, const TStr& Nm) const;
-
   TStr& operator=(const TStr& Str){
     if (this!=&Str){RStr->UnRef(); RStr=Str.RStr; RStr->MkRef();} return *this;}
   TStr& operator=(const TChA& ChA){
@@ -459,63 +396,48 @@ public:
     RStr->UnRef(); RStr=NewRStr; RStr->MkRef();
     Optimize(); return *this;}
   TStr& operator/(const int& N){
-    // no-op, this definition is required by the aaMean table aggregation
     return *this;}
   bool operator==(const TStr& Str) const {
     return (RStr==Str.RStr)||(strcmp(RStr->CStr(), Str.RStr->CStr())==0);}
   bool operator==(const char* CStr) const {
     return strcmp(RStr->CStr(), CStr)==0;}
-//  bool operator!=(const TStr& Str) const {
-//    return strcmp(RStr->CStr(), Str.RStr->CStr())!=0;}
   bool operator!=(const char* CStr) const {
     return strcmp(RStr->CStr(), CStr)!=0;}
   bool operator<(const TStr& Str) const {
     return strcmp(RStr->CStr(), Str.RStr->CStr())<0;}
   char operator[](const int& ChN) const {return RStr->GetCh(ChN);}
   int GetMemUsed() const {return int(sizeof(TRStr*)+RStr->GetMemUsed());}
-
   char* operator()(){return RStr->CStr();}
   const char* operator()() const {return RStr->CStr();}
   char* CStr() {return RStr->CStr();}
   const char* CStr() const {return RStr->CStr();}
-
   void PutCh(const int& ChN, const char& Ch){
     TRStr* NewRStr=new TRStr(RStr->CStr());
     RStr->UnRef(); RStr=NewRStr; RStr->MkRef();
     RStr->PutCh(ChN, Ch); Optimize();}
   char GetCh(const int& ChN) const {return RStr->GetCh(ChN);}
   char LastCh() const {return GetCh(Len()-1);}
-
   void Clr(){RStr->UnRef(); RStr=TRStr::GetNullRStr(); RStr->MkRef();}
   int Len() const {return RStr->Len();}
   bool Empty() const {return RStr->Empty();}
-
-  // upper-case
   bool IsUc() const {return RStr->IsUc();}
   TStr& ToUc();
   TStr GetUc() const {return TStr(*this).ToUc();}
   int CmpI(const TStr& Str) const {return TRStr::CmpI(CStr(), Str.CStr());}
   bool EqI(const TStr& Str) const {return TRStr::CmpI(CStr(), Str.CStr())==0;}
-  // lower-case
   bool IsLc() const {return RStr->IsLc();}
   TStr& ToLc();
   TStr GetLc() const {return TStr(*this).ToLc();}
-  // capitalize
   TStr& ToCap();
   TStr GetCap() const {return TStr(*this).ToCap();}
-
-  // truncate
   TStr& ToTrunc();
   TStr GetTrunc() const {return TStr(*this).ToTrunc();}
-  // Yu-Ascii to Us-Ascii
   TStr& ConvUsFromYuAscii();
   TStr GetUsFromYuAscii() const {return TStr(*this).ConvUsFromYuAscii();}
-  // hex
   TStr& ToHex();
   TStr GetHex() const {return TStr(*this).ToHex();}
   TStr& FromHex();
   TStr GetFromHex() const {return TStr(*this).FromHex();}
-
   TStr GetSubStr(const int& BChN, const int& EChN) const;
   TStr GetSubStr(const int& BChN) const { return GetSubStr(BChN, Len()-1); }
   void InsStr(const int& BChN, const TStr& Str);
@@ -536,19 +458,12 @@ public:
   void SplitOnNonAlNum(TStrV& StrV) const;
   void SplitOnStr(const TStr& SplitStr, TStrV& StrV) const;
   void SplitOnStr(TStr& LeftStr, const TStr& MidStr, TStr& RightStr) const;
-
-  //TStr Left(const int& Chs) const { return Chs>0 ? GetSubStr(0, Chs-1) : GetSubStr(0, Len()-Chs-1);}
-  //TStr Right(const int& Chs) const {return GetSubStr(Len()-Chs, Len()-1);}
   TStr Mid(const int& BChN, const int& Chs) const { return GetSubStr(BChN, BChN+Chs-1); }
   TStr Mid(const int& BChN) const {return GetSubStr(BChN, Len()-1); }
-  //TStr Slice(const int& BChN, const int& EChNP1) const {return GetSubStr(BChN, EChNP1-1);}
-  //TStr operator()(const int& BChN, const int& EChNP1) const {return Slice(BChN, EChNP1);}
-  //J: as in python or matlab: position 1 is 1st character, -1 is last character
   TStr Left(const int& EChN) const { return EChN>0 ? GetSubStr(0, EChN-1) : GetSubStr(0, Len()+EChN-1);}
   TStr Right(const int& BChN) const {return BChN>=0 ? GetSubStr(BChN, Len()-1) : GetSubStr(Len()+BChN, Len()-1);}
   TStr Slice(int BChN, int EChNP1) const { if(BChN<0){BChN=Len()+BChN;} if(EChNP1<=0){EChNP1=Len()+EChNP1;} return GetSubStr(BChN, EChNP1-1); }
   TStr operator()(const int& BChN, const int& EChNP1) const {return Slice(BChN, EChNP1);}
-
   int CountCh(const char& Ch, const int& BChN=0) const;
   int SearchCh(const char& Ch, const int& BChN=0) const;
   int SearchChBack(const char& Ch, int BChN=-1) const;
@@ -561,19 +476,15 @@ public:
   bool IsSuffix(const char *Str) const;
   bool IsSuffix(const TStr& Str) const {
     return IsSuffix(Str.CStr());}
-
   int ChangeCh(const char& SrcCh, const char& DstCh, const int& BChN=0);
   int ChangeChAll(const char& SrcCh, const char& DstCh);
   int ChangeStr(const TStr& SrcStr, const TStr& DstStr, const int& BChN=0);
   int ChangeStrAll(const TStr& SrcStr, const TStr& DstStr, const bool& FromStartP=false);
   TStr Reverse() const {
     TChA ChA(*this); ChA.Reverse(); return ChA;}
-
   int GetPrimHashCd() const {return RStr->GetPrimHashCd();}
   int GetSecHashCd() const {return RStr->GetSecHashCd();}
-
   bool IsBool(bool& Val) const;
-
   bool IsInt(
    const bool& Check, const int& MnVal, const int& MxVal, int& Val) const;
   bool IsInt(int& Val) const {return IsInt(false, 0, 0, Val);}
@@ -581,7 +492,6 @@ public:
   int GetInt() const {int Val; IAssertR(IsInt(false, 0, 0, Val), *this); return Val;}
   int GetInt(const int& DfVal) const {
     int Val; if (IsInt(false, 0, 0, Val)){return Val;} else {return DfVal;}}
-
   bool IsUInt(
    const bool& Check, const uint& MnVal, const uint& MxVal, uint& Val) const;
   bool IsUInt(uint& Val) const {return IsUInt(false, 0, 0, Val);}
@@ -589,7 +499,6 @@ public:
   uint GetUInt() const {uint Val; IAssert(IsUInt(false, 0, 0, Val)); return Val;}
   uint GetUInt(const uint& DfVal) const {
     uint Val; if (IsUInt(false, 0, 0, Val)){return Val;} else {return DfVal;}}
-
   bool IsInt64(
    const bool& Check, const int64& MnVal, const int64& MxVal, int64& Val) const;
   bool IsInt64(int64& Val) const {return IsInt64(false, 0, 0, Val);}
@@ -598,7 +507,6 @@ public:
     int64 Val; IAssert(IsInt64(false, 0, 0, Val)); return Val;}
   int64 GetInt64(const int64& DfVal) const {
     int64 Val; if (IsInt64(false, 0, 0, Val)){return Val;} else {return DfVal;}}
-
   bool IsUInt64(
    const bool& Check, const uint64& MnVal, const uint64& MxVal, uint64& Val) const;
   bool IsUInt64(uint64& Val) const {return IsUInt64(false, 0, 0, Val);}
@@ -607,7 +515,6 @@ public:
     uint64 Val; IAssert(IsUInt64(false, 0, 0, Val)); return Val;}
   uint64 GetUInt64(const uint64& DfVal) const {
     uint64 Val; if (IsUInt64(false, 0, 0, Val)){return Val;} else {return DfVal;}}
-
   bool IsHexInt(const bool& Check, const int& MnVal, const int& MxVal, int& Val) const;
   bool IsHexInt(int& Val) const {return IsHexInt(false, 0, 0, Val);}
   bool IsHexInt() const {int Val; return IsHexInt(false, 0, 0, Val);}
@@ -615,7 +522,6 @@ public:
     int Val; IAssert(IsHexInt(false, 0, 0, Val)); return Val;}
   int GetHexInt(const int& DfVal) const {
     int Val; if (IsHexInt(false, 0, 0, Val)){return Val;} else {return DfVal;}}
-
   bool IsHexInt64(const bool& Check, const int64& MnVal, const int64& MxVal, int64& Val) const;
   bool IsHexInt64(int64& Val) const {return IsHexInt64(false, 0, 0, Val);}
   bool IsHexInt64() const {int64 Val; return IsHexInt64(false, 0, 0, Val);}
@@ -623,7 +529,6 @@ public:
     int64 Val; IAssert(IsHexInt64(false, 0, 0, Val)); return Val;}
   int64 GetHexInt64(const int64& DfVal) const {
     int64 Val; if (IsHexInt64(false, 0, 0, Val)){return Val;} else {return DfVal;}}
-
   bool IsFlt(const bool& Check, const double& MnVal, const double& MxVal,
    double& Val, const char& DecDelimCh='.') const;
   bool IsFlt(double& Val) const {return IsFlt(false, 0, 0, Val);}
@@ -632,10 +537,8 @@ public:
     double Val; IAssert(IsFlt(false, 0, 0, Val)); return Val;}
   double GetFlt(const double& DfVal) const {
     double Val; if (IsFlt(false, 0, 0, Val)){return Val;} else {return DfVal;}}
-
   bool IsWord(const bool& WsPrefixP=true, const bool& FirstUcAllowedP=true) const;
   bool IsWs() const;
-
   bool IsWcMatch(
    const int& StrBChN, const TStr& WcStr, const int& WcStrBChN, TStrV& StarStrV,
    const char& StarCh='*', const char& QuestCh='?') const;
@@ -646,7 +549,6 @@ public:
   bool IsWcMatch(const TStr& WcStr, const int& StarStrN, TStr& StarStr) const;
   bool IsWcMatch(const TStr& WcStr) const;
   TStr GetWcMatch(const TStr& WcStr, const int& StarStrN=0) const;
-
   TStr GetFPath() const;
   TStr GetFBase() const;
   TStr GetFMid() const;
@@ -665,7 +567,6 @@ public:
   static TStr AddToFMid(const TStr& FNm, const TStr& ExtFMid);
   static TStr GetNumFNm(const TStr& FNm, const int& Num);
   static TStr GetFNmStr(const TStr& Str, const bool& AlNumOnlyP=true);
-
   static TStr LoadTxt(const PSIn& SIn){
     return TStr(SIn);}
   static TStr LoadTxt(const TStr& FNm){
@@ -674,10 +575,8 @@ public:
     SOut->SaveBf(CStr(), Len());}
   void SaveTxt(const TStr& FNm) const {
     PSOut SOut=TFOut::New(FNm); SaveTxt(SOut);}
-
   static TStr& GetChStr(const char& Ch);
   static TStr& GetDChStr(const char& Ch1, const char& Ch2);
-
   TStr GetStr() const {return *this;}
   static TStr GetStr(const TStr& Str, const char* FmtStr);
   static TStr GetStr(const TStr& Str, const TStr& FmtStr){
@@ -687,16 +586,11 @@ public:
   static TStr GetSpaceStr(const int& Spaces);
   char* GetCStr() const {
     char* Bf=new char[Len()+1]; strcpy(Bf, CStr()); return Bf;}
-
   static TStr MkClone(const TStr& Str){return TStr(Str.CStr());}
   static TStr GetNullStr();
-
   friend TStr operator+(const TStr& LStr, const TStr& RStr);
   friend TStr operator+(const TStr& LStr, const char* RCStr);
 };
-
-/////////////////////////////////////////////////
-// Input-String
 class TStrIn: public TSIn{
 private:
   TStr Str;
@@ -710,7 +604,6 @@ public:
   TStrIn(const TStr& _Str);
   static PSIn New(const TStr& Str){return PSIn(new TStrIn(Str));}
   ~TStrIn(){}
-
   bool Eof(){return BfC==BfL;}
   int Len() const {return BfL-BfC;}
   char GetCh(){Assert(BfC<BfL); return Bf[BfC++];}
@@ -719,9 +612,6 @@ public:
   void Reset(){Cs=TCs(); BfC=0;}
   bool GetNextLnBf(TChA& LnChA);
 };
-
-/////////////////////////////////////////////////
-// Double-String
 class TDbStr{
 public:
   TStr Str1;
@@ -733,52 +623,22 @@ public:
   TDbStr(const TStr& _Str1, const TStr& _Str2): Str1(_Str1), Str2(_Str2){}
   explicit TDbStr(TSIn& SIn): Str1(SIn), Str2(SIn){}
   void Save(TSOut& SOut) const {Str1.Save(SOut); Str2.Save(SOut);}
-
   TDbStr& operator=(const TDbStr& DbStr){
     if (this!=&DbStr){Str1=DbStr.Str1; Str2=DbStr.Str2;} return *this;}
   bool operator==(const TDbStr& DbStr) const {
     return (Str1==DbStr.Str1)&&(Str2==DbStr.Str2);}
   bool operator<(const TDbStr& DbStr) const {
     return (Str1<DbStr.Str1)||((Str1==DbStr.Str1)&&(Str2<DbStr.Str2));}
-
   TStr GetStr(const TStr& MidStr=TStr()) const {
     if (Filled()){return Str1+MidStr+Str2;} else {return Str1+Str2;}}
   int GetPrimHashCd() const {
     return Str1.GetPrimHashCd()+Str2.GetPrimHashCd();}
   int GetSecHashCd() const {
     return Str1.GetSecHashCd()+Str2.GetSecHashCd();}
-
   bool Empty() const {return (Str1.Empty())&&(Str2.Empty());}
   bool Filled() const {return (!Str2.Empty())&&(!Str1.Empty());}
 };
-
-/////////////////////////////////////////////////
-// Simple-String-Pool
-//ClassTP(TSStrPool, PSStrPool)//{
-//private:
-//  TMem Bf;
-//public:
-//  TSStrPool(const int& MxLen=0): Bf(MxLen){}
-//  TSStrPool(TSStrPool& StrPool): Bf(StrPool.Bf){}
-//  TSStrPool(TSIn& SIn): Bf(SIn){}
-//  void Save(TSOut& SOut) const {Bf.Save(SOut);}
-//
-//  TSStrPool& operator=(const TSStrPool& StrPool){
-//    Bf=StrPool.Bf; return *this;}
-//
-//  int Len() const {return Bf.Len();}
-//  void Clr(){Bf.Clr();}
-//  int AddStr(const TStr& Str){
-//    if (Str.Empty()){return -1;}
-//    else {int StrId=Bf.Len(); Bf+=Str; Bf+=char(0); return StrId;}}
-//  TStr GetStr(const int& StrId) const {
-//    if (StrId==-1){return "";}
-//    else {return TStr(Bf()+StrId);}}
-//};
-
-/////////////////////////////////////////////////
-// String-Pool
-ClassTP(TStrPool, PStrPool)//{
+ClassTP(TStrPool, PStrPool)
 private:
   uint MxBfL, BfL, GrowBy;
   char *Bf;
@@ -790,36 +650,28 @@ public:
   TStrPool(const TStrPool& Pool) : MxBfL(Pool.MxBfL), BfL(Pool.BfL), GrowBy(Pool.GrowBy) {
     Bf = (char *) malloc(Pool.MxBfL); IAssertR(Bf, TStr::Fmt("Can not resize buffer to %u bytes. [Program failed to allocate more memory. Solution: Get a bigger machine.]", MxBfL).CStr()); memcpy(Bf, Pool.Bf, Pool.BfL); }
   ~TStrPool() { if (Bf) free(Bf); else IAssertR(MxBfL == 0, TStr::Fmt("size: %u, expected size: 0", MxBfL).CStr());  Bf = 0; MxBfL = 0; BfL = 0; }
-
   static PStrPool New(const uint& _MxBfLen = 0, const uint& _GrowBy = 16*1024*1024) { return PStrPool(new TStrPool(_MxBfLen, _GrowBy)); }
   static PStrPool New(TSIn& SIn) { return new TStrPool(SIn); }
   static PStrPool New(const TStr& fileName) { PSIn SIn = TFIn::New(fileName); return new TStrPool(*SIn); }
   static PStrPool Load(TSIn& SIn, bool LoadCompacted = true) { return PStrPool(new TStrPool(SIn, LoadCompacted)); }
   void Save(TSOut& SOut) const;
   void Save(const TStr& FNm){PSOut SOut=TFOut::New(FNm); Save(*SOut);}
-
   uint Len() const { return BfL; }
   uint Size() const { return MxBfL; }
   bool Empty() const { return ! Len(); }
   char* operator () () const { return Bf; }
   TStrPool& operator = (const TStrPool& Pool);
   ::TSize GetMemUsed(){ return 4 * sizeof(int) + MxBfL;}
-
   uint AddStr(const char *Str, const uint& Len);
   uint AddStr(const char *Str) { return AddStr(Str, uint(strlen(Str)) + 1); }
   uint AddStr(const TStr& Str) { return AddStr(Str.CStr(), Str.Len() + 1); }
-
   TStr GetStr(const uint& Offset) const { Assert(Offset < BfL);
     if (Offset == 0) return TStr::GetNullStr(); else return TStr(Bf + Offset); }
   const char *GetCStr(const uint& Offset) const { Assert(Offset < BfL);
     if (Offset == 0) return TStr::GetNullStr().CStr(); else return Bf + Offset; }
-
-  // Clr() removes the empty string at the start.
-  // Call AddStr("") after Clr(), if you want to use the pool again.
   void Clr(bool DoDel = false) { BfL = 0; if (DoDel && Bf) { free(Bf); Bf = 0; MxBfL = 0; } }
   int Cmp(const uint& Offset, const char *Str) const { Assert(Offset < BfL);
     if (Offset != 0) return strcmp(Bf + Offset, Str); else return strcmp("", Str); }
-
   static int GetPrimHashCd(const char *CStr);
   static int GetSecHashCd(const char *CStr);
   int GetPrimHashCd(const uint& Offset) { Assert(Offset < BfL);
@@ -828,10 +680,7 @@ public:
     if (Offset != 0) return GetSecHashCd(Bf + Offset); else return GetSecHashCd(""); }
   static PStrPool LoadShM(TSIn& SIn){ return new TStrPool(SIn); }
 };
-
-/////////////////////////////////////////////////
-// String-Pool-64bit
-ClassTP(TStrPool64, PStrPool64)//{
+ClassTP(TStrPool64, PStrPool64)
 private:
   ::TSize MxBfL, BfL, GrowBy;
   char *Bf;
@@ -843,29 +692,21 @@ public:
   TStrPool64(TSIn& SIn, bool LoadCompact = true);
   ~TStrPool64() { Clr(true); }
   void Save(TSOut& SOut) const;
-
-  static PStrPool64 New(::TSize MxBfL = 0, ::TSize GrowBy = 16*1024*1024) { 
+  static PStrPool64 New(::TSize MxBfL = 0, ::TSize GrowBy = 16*1024*1024) {
       return PStrPool64(new TStrPool64(MxBfL, GrowBy)); }
   static PStrPool64 Load(TSIn& SIn, bool LoadCompact = true) { 
       return PStrPool64(new TStrPool64(SIn, LoadCompact)); }
-
   TStrPool64& operator=(const TStrPool64& StrPool);
-
   uint64 GetMemUsed() const { return 3*sizeof(::TSize) + uint64(MxBfL); }
-
   bool Empty() const { return (BfL == 0); }
   uint64 Len() const {return BfL;}
   uint64 Reserved() const { return MxBfL; }
   void Clr(bool DoDel = false);
   int Cmp(uint64 Offset, const char *Str) const { Assert(Offset < BfL);
     if (Offset != 0) return strcmp(Bf + Offset, Str); else return strcmp("", Str); }
-
   uint64 AddStr(const TStr& Str);
   TStr GetStr(const uint64& StrId) const;
 };
-
-/////////////////////////////////////////////////
-// Number Base Template
 template <class Base> class TNum{
 public:
   Base Val;
@@ -875,20 +716,15 @@ public:
   explicit TNum(TSIn& SIn){ SIn.Load(Val); }
   void Load(TSIn& SIn){ SIn.Load(Val); }
   void Save(TSOut& SOut) const { SOut.Save(Val); }
-
   TNum& operator=(const TNum& Other){ Val = Other.Val; return *this; }
   TNum& operator=(const Base& _Val){ Val = _Val; return *this; }
-  TNum& operator++(){ ++Val; return *this; } // prefix
-  TNum& operator--(){ --Val; return *this; } // prefix
-  TNum operator++(int){ TNum oldVal = Val; Val++; return oldVal; } // postfix
-  TNum operator--(int){ TNum oldVal = Val; Val--; return oldVal; } // postfix
+  TNum& operator++(){ ++Val; return *this; }
+  TNum& operator--(){ --Val; return *this; }
+  TNum operator++(int){ TNum oldVal = Val; Val++; return oldVal; }
+  TNum operator--(int){ TNum oldVal = Val; Val--; return oldVal; }
   Base& operator()() { return Val; }
-
   int GetMemUsed() const { return sizeof(TNum); }
 };
-
-/////////////////////////////////////////////////
-// Signed-Integer-64Bit
 typedef TNum<int64> TInt64;
 template<>
 class TNum<int64>{
@@ -897,7 +733,6 @@ public:
 public:
   static const int64 Mn;
   static const int64 Mx;
-
   TNum() : Val(0){}
   TNum(const TNum& Int) : Val(Int.Val){}
   TNum(const int64& Int) : Val(Int){}
@@ -908,12 +743,11 @@ public:
   TNum& operator=(const TNum& Int){ Val = Int.Val; return *this; }
   TNum& operator+=(const TNum& Int){ Val += Int.Val; return *this; }
   TNum& operator-=(const TNum& Int){ Val -= Int.Val; return *this; }
-  TNum& operator++(){ ++Val; return *this; } // prefix
-  TNum& operator--(){ --Val; return *this; } // prefix
-  TNum operator++(int){ TNum oldVal = Val; Val++; return oldVal; } // postfix
-  TNum operator--(int){ TNum oldVal = Val; Val--; return oldVal; } // postfix
+  TNum& operator++(){ ++Val; return *this; }
+  TNum& operator--(){ --Val; return *this; }
+  TNum operator++(int){ TNum oldVal = Val; Val++; return oldVal; }
+  TNum operator--(int){ TNum oldVal = Val; Val--; return oldVal; }
   int GetMemUsed() const { return sizeof(TNum); }
-
 #ifdef GLib_WIN
   TStr GetStr() const { return TStr::Fmt("%I64", Val); }
   static TStr GetStr(const TNum& Int){ return TStr::Fmt("%I64", Int.Val); }
@@ -923,7 +757,6 @@ public:
   static TStr GetStr(const TNum& Int){ return TStr::Fmt("%ll", Int.Val); }
   static TStr GetHexStr(const TNum& Int){ return TStr::Fmt("%ll", Int.Val); }
 #endif
-
   static TStr GetKiloStr(const int64& Val){
     if (Val>100 * 1000){ return GetStr(Val / 1000) + "K"; }
     else if (Val>1000){ return GetStr(Val / 1000) + "." + GetStr((Val % 1000) / 100) + "K"; }
@@ -936,25 +769,16 @@ public:
     }
     else { return GetKiloStr(Val); }
   }
-  /*static TStr GetGigaStr(const int64& Val){
-   * if (Val>100*1000000000){return GetStr(Val/1000000000)+"G";}
-   * else if (Val>1000000000){
-   * return GetStr(Val/1000000000)+"."+GetStr((Val%1000000000)/100000000)+"G";}
-   * else {return GetMegaStr(Val);}}*/
-
   static int64 GetFromBufSafe(const char * Bf) {
 #ifdef ARM
     int64 Val;
-    memcpy(&Val, Bf, sizeof(int64)); //we cannot use a cast on ARM (needs 8byte memory aligned doubles)
+    memcpy(&Val, Bf, sizeof(int64));
     return Val;
 #else
     return *((int64*)Bf);
 #endif
   }
 };
-
-/////////////////////////////////////////////////
-// Void
 class TVoid{
 public:
   TVoid(){}
@@ -962,15 +786,11 @@ public:
   void Save(TSOut&) const {}
   void LoadXml(const PXmlTok& XmlTok, const TStr& Nm);
   void SaveXml(TSOut& SOut, const TStr& Nm) const;
-
   TVoid& operator=(const TVoid&){return *this;}
   bool operator==(const TVoid&) const {return true;}
   bool operator<(const TVoid&) const {Fail; return false;}
   int GetMemUsed() const {return sizeof(TVoid);}
 };
-
-/////////////////////////////////////////////////
-// Boolean
 class TBool{
 public:
   bool Val;
@@ -979,14 +799,12 @@ public:
   static const bool Mx;
   static const int Vals;
   static TRnd Rnd;
-
   static const TStr FalseStr;
   static const TStr TrueStr;
   static const TStr NStr;
   static const TStr YStr;
   static const TStr NoStr;
   static const TStr YesStr;
-
   TBool(): Val(false){}
   TBool(const bool& _Val): Val(_Val){}
   operator bool() const {return Val;}
@@ -995,19 +813,15 @@ public:
   void Save(TSOut& SOut) const {SOut.Save(Val);}
   void LoadXml(const PXmlTok& XmlTok, const TStr& Nm);
   void SaveXml(TSOut& SOut, const TStr& Nm) const;
-
   TBool& operator=(const TBool& Bool){Val=Bool.Val; return *this;}
   bool operator==(const TBool& Bool) const {return Val==Bool.Val;}
-  bool operator<(const TBool& Bool) const {//return Val<Bool.Val;
+  bool operator<(const TBool& Bool) const {
     return (Val==false)&&(Bool.Val==true);}
   bool operator()() const {return Val;}
   int GetMemUsed() const {return sizeof(TBool);}
-
   int GetPrimHashCd() const {return Val;}
   int GetSecHashCd() const {return Val;}
-
   static bool GetRnd(){return Rnd.GetUniDevInt(2)==1;}
-
   static TStr GetStr(const bool& Val){
     if (Val){return TrueStr;} else {return FalseStr;}}
   static TStr GetStr(const TBool& Bool){
@@ -1022,9 +836,6 @@ public:
   static bool GetValFromStr(const TStr& Str);
   static bool GetValFromStr(const TStr& Str, const bool& DfVal);
 };
-
-/////////////////////////////////////////////////
-// Char
 class TCh{
 public:
   char Val;
@@ -1032,14 +843,12 @@ public:
   static const char Mn;
   static const char Mx;
   static const int Vals;
-
   static const char NullCh;
   static const char TabCh;
   static const char LfCh;
   static const char CrCh;
   static const char EofCh;
   static const char HashCh;
-
   TCh(): Val(TCh::NullCh){}
   TCh(const char& _Val): Val(_Val){}
   operator char() const {return Val;}
@@ -1048,16 +857,13 @@ public:
   void Save(TSOut& SOut) const {SOut.Save(Val);}
   void LoadXml(const PXmlTok& XmlTok, const TStr& Nm);
   void SaveXml(TSOut& SOut, const TStr& Nm) const;
-
   TCh& operator=(const TCh& Ch){Val=Ch.Val; return *this;}
   bool operator==(const TCh& Ch) const {return Val==Ch.Val;}
   bool operator<(const TCh& Ch) const {return Val<Ch.Val;}
   char operator()() const {return Val;}
   int GetMemUsed() const {return sizeof(TCh);}
-
   int GetPrimHashCd() const {return Val;}
   int GetSecHashCd() const {return Val;}
-
   static bool IsHashCh(const char& Ch){
     return (Ch==HashCh);}
   static bool IsWs(const char& Ch){
@@ -1083,13 +889,9 @@ public:
   static char GetUc(const char& Ch){
     if (('a'<=Ch)&&(Ch<='z')){return Ch-'a'+'A';} else {return Ch;}}
   static char GetUsFromYuAscii(const char& Ch);
-
   static TStr GetStr(const TCh& Ch){
     return TStr(Ch.Val);}
 };
-
-/////////////////////////////////////////////////
-// Unsigned-Char
 class TUCh{
 public:
   uchar Val;
@@ -1097,7 +899,6 @@ public:
   static const uchar Mn;
   static const uchar Mx;
   static const int Vals;
-
   TUCh(): Val(TCh::NullCh){}
   TUCh(const uchar& _Val): Val(_Val){}
   operator uchar() const {return Val;}
@@ -1105,19 +906,14 @@ public:
   void Save(TSOut& SOut) const {SOut.Save(Val);}
   void LoadXml(const PXmlTok& XmlTok, const TStr& Nm);
   void SaveXml(TSOut& SOut, const TStr& Nm) const;
-
   TUCh& operator=(const TUCh& UCh){Val=UCh.Val; return *this;}
   bool operator==(const TUCh& UCh) const {return Val==UCh.Val;}
   bool operator<(const TUCh& UCh) const {return Val<UCh.Val;}
   uchar operator()() const {return Val;}
   int GetMemUsed() const {return sizeof(TUCh);}
-
   int GetPrimHashCd() const {return Val;}
   int GetSecHashCd() const {return Val;}
 };
-
-/////////////////////////////////////////////////
-// Short-Integer
 class TSInt{
 public:
   int16 Val;
@@ -1131,9 +927,6 @@ public:
   int GetPrimHashCd() const {return Val;}
   int GetSecHashCd() const {return Val/0x10;}
 };
-
-/////////////////////////////////////////////////
-// Integer
 class TInt{
 public:
   int Val;
@@ -1144,7 +937,6 @@ public:
   static const int Mega;
   static const int Giga;
   static TRnd Rnd;
-
   TInt(): Val(0){}
   TInt(const int& _Val): Val(_Val){}
   operator int() const {return Val;}
@@ -1153,7 +945,6 @@ public:
   void Save(TSOut& SOut) const {SOut.Save(Val);}
   void LoadXml(const PXmlTok& XmlTok, const TStr& Nm);
   void SaveXml(TSOut& SOut, const TStr& Nm) const;
-
   TInt& operator=(const TInt& Int){Val=Int.Val; return *this;}
   TInt& operator=(const int& Int){Val=Int; return *this;}
   bool operator==(const TInt& Int) const {return Val==Int.Val;}
@@ -1167,19 +958,15 @@ public:
   TInt operator++(int){Val++; return *this;}
   TInt operator--(int){Val--; return *this;}
   int GetMemUsed() const {return sizeof(TInt);}
-
   int GetPrimHashCd() const {return Val;}
   int GetSecHashCd() const {return Val/0x10;}
-
   static int Abs(const int& Int){return Int<0?-Int:Int;}
   static int Sign(const int& Int){return Int<0?-1:(Int>0?1:0);}
   static void Swap(int& Int1, int& Int2){
     int SwapInt1=Int1; Int1=Int2; Int2=SwapInt1;}
   static int GetRnd(const int& Range=0){return Rnd.GetUniDevInt(Range);}
-
   static bool IsOdd(const int& Int){return ((Int%2)==1);}
   static bool IsEven(const int& Int){return ((Int%2)==0);}
-
   static int GetMn(const int& Int1, const int& Int2){
     return Int1<Int2?Int1:Int2;}
   static int GetMx(const int& Int1, const int& Int2){
@@ -1196,15 +983,12 @@ public:
     return GetMx(GetMx(Int1, Int2), GetMx(Int3, Int4));}
   static int GetInRng(const int& Val, const int& Mn, const int& Mx){
     IAssert(Mn<=Mx); return Val<Mn?Mn:(Val>Mx?Mx:Val);}
-
   TStr GetStr() const {return TInt::GetStr(Val);}
   
   static TStr GetStr(const int& Val){ return TStr::Fmt("%d", Val); }
   static TStr GetStr(const TInt& Int){ return GetStr(Int.Val);}
   static TStr GetStr(const int& Val, const char* FmtStr);
   static TStr GetStr(const int& Val, const TStr& FmtStr){ return GetStr(Val, FmtStr.CStr());}
-
-  //J: So that TInt can convert any kind of integer to a string
   static TStr GetStr(const uint& Val){ return TStr::Fmt("%u", Val); }
   #ifdef GLib_WIN
   static TStr GetStr(const int64& Val) {return TStr::Fmt("%I64d", Val);}
@@ -1213,12 +997,10 @@ public:
   static TStr GetStr(const int64& Val) {return TStr::Fmt("%lld", Val);}
   static TStr GetStr(const uint64& Val) {return TStr::Fmt("%llu", Val);}
   #endif
-
   static TStr GetHexStr(const int& Val){
     char Bf[255]; sprintf(Bf, "%X", Val); return TStr(Bf);}
   static TStr GetHexStr(const TInt& Int){
     return GetHexStr(Int.Val);}
-
   static TStr GetKiloStr(const int& Val){
     if (Val>=100*1000){return GetStr(Val/1000)+"K";}
     else if (Val>=1000){return GetStr(Val/1000)+"."+GetStr((Val%1000)/100)+"K";}
@@ -1228,17 +1010,12 @@ public:
     else if (Val>=1000000){
       return GetStr(Val/1000000)+"."+GetStr((Val%1000000)/100000)+"M";}
     else {return GetKiloStr(Val);}}
-
-  // frugal
   static char* SaveFrugalInt(char *pDest, int i);
   static char* LoadFrugalInt(char *pSrc, int& i);
   static void TestFrugalInt();
   static void SaveFrugalIntV(TSOut& SOut, const TVec<TInt, int>& IntV);
   static void LoadFrugalIntV(TSIn& SIn, TVec<TInt, int>& IntV, bool ClrP=true);
 };
-
-/////////////////////////////////////////////////
-// Unsigned-Integer
 class TUInt{
 public:
   uint Val;
@@ -1246,7 +1023,6 @@ public:
   static const uint Mn;
   static const uint Mx;
   static TRnd Rnd;
-
   TUInt(): Val(0){}
   TUInt(const uint& _Val): Val(_Val){}
   operator uint() const {return Val;}
@@ -1255,15 +1031,10 @@ public:
   void Save(TSOut& SOut) const {SOut.Save(Val);}
   void LoadXml(const PXmlTok& XmlTok, const TStr& Nm);
   void SaveXml(TSOut& SOut, const TStr& Nm) const;
-
   TUInt& operator=(const TUInt& UInt){Val=UInt.Val; return *this;}
   TUInt& operator=(const uint& _Val){Val=_Val; return *this;}
   TUInt operator++(int){Val++; return *this;}
   TUInt operator--(int){Val--; return *this;}
-  //bool operator==(const TUInt& UInt) const {return Val==UInt.Val;}
-  //bool operator==(const uint& UInt) const {return Val==UInt;}
-  //bool operator!=(const uint& UInt) const {return Val!=UInt;}
-  //bool operator<(const TUInt& UInt) const {return Val<UInt.Val;}
   uint operator()() const {return Val;}
   uint& operator()() {return Val;}
   TUInt& operator~(){Val=~Val; return *this;}
@@ -1273,12 +1044,9 @@ public:
   TUInt& operator>>=(const int& ShiftBits){Val>>=ShiftBits; return *this;}
   TUInt& operator<<=(const int& ShiftBits){Val<<=ShiftBits; return *this;}
   int GetMemUsed() const {return sizeof(TUInt);}
-
   int GetPrimHashCd() const {return int(Val);}
   int GetSecHashCd() const {return Val/0x10;}
-
   static uint GetRnd(const uint& Range=0){return Rnd.GetUniDevUInt(Range);}
-
   TStr GetStr() const {return TUInt::GetStr(Val);}
   static TStr GetStr(const uint& Val){
     char Bf[255]; sprintf(Bf, "%u", Val); return TStr(Bf);}
@@ -1287,7 +1055,6 @@ public:
   static TStr GetStr(const uint& Val, const char* FmtStr);
   static TStr GetStr(const uint& Val, const TStr& FmtStr){
     return GetStr(Val, FmtStr.CStr());}
-
   static TStr GetKiloStr(const uint& Val){
     if (Val>100*1000){return GetStr(Val/1000)+"K";}
     else if (Val>1000){return GetStr(Val/1000)+"."+GetStr((Val%1000)/100)+"K";}
@@ -1297,7 +1064,6 @@ public:
     else if (Val>1000000){
       return GetStr(Val/1000000)+"."+GetStr((Val%1000000)/100000)+"M";}
     else {return GetKiloStr(Val);}}
-
   static uint JavaUIntToCppUInt(const uint& JavaUInt){
     uint B1=(JavaUInt & 0xFF000000) >> 24;
     uint B2=(JavaUInt & 0x00FF0000) >> 16;
@@ -1305,23 +1071,18 @@ public:
     uint B4=(JavaUInt & 0x000000FF) >> 0;
     uint CppUInt=(B4<<24)+(B3<<16)+(B2<<8)+(B1<<0);
     return CppUInt;}
-
   static bool IsIpStr(const TStr& IpStr, uint& Ip, const char& SplitCh = '.');
   static bool IsIpStr(const TStr& IpStr, const char& SplitCh = '.') { uint Ip; return IsIpStr(IpStr, Ip, SplitCh); }
   static uint GetUIntFromIpStr(const TStr& IpStr, const char& SplitCh = '.');
   static TStr GetStrFromIpUInt(const uint& Ip);
   static bool IsIpv6Str(const TStr& IpStr, const char& SplitCh = ':');
 };
-
-/////////////////////////////////////////////////
-// Unsigned-Integer-64Bit
 class TUInt64{
 public:
   uint64 Val;
 public:
   static const TUInt64 Mn;
   static const TUInt64 Mx;
-
   TUInt64(): Val(0){}
   TUInt64(const TUInt64& Int): Val(Int.Val){}
   TUInt64(const uint64& Int): Val(Int){}
@@ -1335,7 +1096,6 @@ public:
   void Save(TSOut& SOut) const {SOut.Save(Val);}
   void LoadXml(const PXmlTok& XmlTok, const TStr& Nm);
   void SaveXml(TSOut& SOut, const TStr& Nm) const;
-
   TUInt64& operator=(const TUInt64& Int){Val=Int.Val; return *this;}
   TUInt64& operator+=(const TUInt64& Int){Val+=Int.Val; return *this;}
   TUInt64& operator-=(const TUInt64& Int){Val-=Int.Val; return *this;}
@@ -1343,18 +1103,12 @@ public:
   TUInt64 operator++(int){Val++; return *this;}
   TUInt64 operator--(int){Val--; return *this;}
   int GetMemUsed() const {return sizeof(TUInt64);}
-
-  int GetPrimHashCd() const { return (int)GetMsVal() + (int)GetLsVal(); } //
-  int GetSecHashCd() const { return ((int)GetMsVal() + (int)GetLsVal()) / 0x10; } //
-
+  int GetPrimHashCd() const { return (int)GetMsVal() + (int)GetLsVal(); }
+  int GetSecHashCd() const { return ((int)GetMsVal() + (int)GetLsVal()) / 0x10; }
   uint GetMsVal() const {
     return (uint)(Val >> 32);}
   uint GetLsVal() const {
     return (uint)(Val & 0xffffffff);}
-
-  //TStr GetStr() const {return TStr::Fmt("%Lu", Val);}
-  //static TStr GetStr(const TUInt64& Int){return TStr::Fmt("%Lu", Int.Val);}
-  //static TStr GetHexStr(const TUInt64& Int){return TStr::Fmt("%LX", Int.Val);}
   #ifdef GLib_WIN
   TStr GetStr() const {return TStr::Fmt("%I64u", Val);}
   static TStr GetStr(const TUInt64& Int){return TStr::Fmt("%I64u", Int.Val);}
@@ -1364,7 +1118,6 @@ public:
   static TStr GetStr(const TUInt64& Int){return TStr::Fmt("%llu", Int.Val);}
   static TStr GetHexStr(const TUInt64& Int){return TStr::Fmt("%llX", Int.Val);}
   #endif
-
   static TStr GetKiloStr(const uint64& Val){
     if (Val>100*1000){return GetStr(Val/1000)+"K";}
     else if (Val>1000){return GetStr(Val/1000)+"."+GetStr((Val%1000)/100)+"K";}
@@ -1374,15 +1127,7 @@ public:
     else if (Val>1000000){
       return GetStr(Val/1000000)+"."+GetStr((Val%1000000)/100000)+"M";}
     else {return GetKiloStr(Val);}}
-  /*static TStr GetGigaStr(const uint64& Val){
-    if (Val>100*1000000000){return GetStr(Val/1000000000)+"G";}
-    else if (Val>1000000000){
-      return GetStr(Val/1000000000)+"."+GetStr((Val%1000000000)/100000000)+"G";}
-    else {return GetMegaStr(Val);}}*/
 };
-
-/////////////////////////////////////////////////
-// Float
 class TFlt{
 public:
   double Val;
@@ -1394,7 +1139,6 @@ public:
   static const double Eps;
   static const double EpsHalf;
   static TRnd Rnd;
-
   TFlt(): Val(0){}
   TFlt(const double& _Val): Val(_Val){}
   operator double() const {return Val;}
@@ -1407,7 +1151,6 @@ public:
     if (IsTxt){GetStr(Val).Save(SOut, true);} else {SOut.Save(Val);}}
   void LoadXml(const PXmlTok& XmlTok, const TStr& Nm);
   void SaveXml(TSOut& SOut, const TStr& Nm) const;
-
   TFlt& operator=(const TFlt& Flt){Val=Flt.Val; return *this;}
   TFlt& operator=(const double& Flt){Val=Flt; return *this;}
   bool operator==(const TFlt& Flt) const _CMPWARN {return Val==Flt.Val;}
@@ -1421,44 +1164,36 @@ public:
   TFlt operator++(int){Val++; return *this;}
   TFlt operator--(int){Val--; return *this;}
   int GetMemUsed() const {return sizeof(TFlt);}
-
   int GetPrimHashCd() const {
     int Expn; return int((frexp(Val, &Expn)-0.5)*double(TInt::Mx));}
   int GetSecHashCd() const {
     int Expn; frexp(Val, &Expn); return Expn;}
-
   static double Abs(const double& Flt){return Flt<0?-Flt:Flt;}
   static int Sign(const double& Flt){return Flt<0?-1:(Flt>0?1:0);}
   static int Round(const double& Flt){return int(floor(Flt+0.5));}
   static double GetRnd(){return Rnd.GetUniDev();}
   static bool Eq6(const double& LFlt, const double& RFlt){
     return fabs(LFlt-RFlt)<0.000001;}
-
   static double GetMn(const double& Flt1, const double& Flt2){
     return Flt1<Flt2?Flt1:Flt2;}
   static double GetMn(const double& Flt1, const double& Flt2, const double& Flt3){
     return GetMn(GetMn(Flt1, Flt2), Flt3); }
   static double GetMn(const double& Flt1, const double& Flt2, const double& Flt3, const double& Flt4){
     return GetMn(GetMn(Flt1, Flt2), GetMn(Flt3, Flt4)); }
-
   static double GetMx(const double& Flt1, const double& Flt2){
     return Flt1>Flt2?Flt1:Flt2;}
   static double GetMx(const double& Flt1, const double& Flt2, const double Flt3){
     return GetMx(GetMx(Flt1, Flt2), Flt3); }
   static double GetMx(const double& Flt1, const double& Flt2, const double Flt3, const double& Flt4){
     return GetMx(GetMx(Flt1, Flt2), GetMx(Flt3, Flt4)); }
-
   static double GetInRng(const double& Val, const double& Mn, const double& Mx){
     IAssert(Mn<=Mx); return Val<Mn?Mn:(Val>Mx?Mx:Val);}
-
   static bool IsNum(const double& Val){
     return (Mn<=Val)&&(Val<=Mx);}
   static bool IsNan(const double& Val){
     return (Val!=Val);}
-
   bool IsNum() const { return IsNum(Val); }
   bool IsNan() const { return IsNan(Val); }
-
   TStr GetStr() const {return TFlt::GetStr(Val);}
   static TStr GetStr(const double& Val, const int& Width=-1, const int& Prec=-1);
   static TStr GetStr(const TFlt& Flt, const int& Width=-1, const int& Prec=-1){
@@ -1468,7 +1203,6 @@ public:
     return GetStr(Val, FmtStr.CStr());}
   static TStr GetPrcStr(const double& RelVal, const double& FullVal){
     return GetStr(100*RelVal/FullVal, "%3.0f%%");}
-
   static TStr GetKiloStr(const double& Val){
     if (fabs(Val)>100*1000){return TStr::Fmt("%.0fK", Val/1000);}
     else if (fabs(Val)>1000){return TStr::Fmt("%.1fK", Val/1000);}
@@ -1482,9 +1216,6 @@ public:
     else if (fabs(Val)>1000000000.0){return TStr::Fmt("%.1fG", Val/1000000000.0);}
     else {return GetMegaStr(Val);}}
 };
-
-/////////////////////////////////////////////////
-// Ascii-Float
 class TAscFlt: public TFlt{
 public:
   TAscFlt(): TFlt(){}
@@ -1492,26 +1223,19 @@ public:
   explicit TAscFlt(TSIn& SIn): TFlt(SIn, true){}
   void Save(TSOut& SOut) const {TFlt::Save(SOut, true);}
 };
-
-/////////////////////////////////////////////////
-// Short-Float
 class TSFlt{
 public:
   sdouble Val;
 public:
   static const sdouble Mn;
   static const sdouble Mx;
-
   TSFlt(): Val(0){}
   TSFlt(const sdouble& _Val): Val(sdouble(_Val)){}
-  //TSFlt(const double& _Val): Val(sdouble(_Val)){}
   operator sdouble() const {return Val;}
-  //operator double() const {return Val;}
   explicit TSFlt(TSIn& SIn){SIn.Load(Val);}
   void Save(TSOut& SOut) const {SOut.Save(Val);}
   void LoadXml(const PXmlTok& XmlTok, const TStr& Nm);
   void SaveXml(TSOut& SOut, const TStr& Nm) const;
-
   TSFlt& operator=(const TSFlt& SFlt){Val=SFlt.Val; return *this;}
   bool operator==(const TSFlt& SFlt) const _CMPWARN {return Val==SFlt.Val;}
   bool operator==(const double& Flt) const _CMPWARN {return Val==Flt;}
@@ -1525,22 +1249,17 @@ public:
   TSFlt operator++(int){Val++; return *this;}
   TSFlt operator--(int){Val--; return *this;}
   int GetMemUsed() const {return sizeof(TSFlt);}
-
   int GetPrimHashCd() const {
     int Expn; return int((frexp(Val, &Expn)-0.5)*double(TInt::Mx));}
   int GetSecHashCd() const {
     int Expn; frexp(Val, &Expn); return Expn;}
 };
-
-/////////////////////////////////////////////////
-// Long-Float
 class TLFlt{
 public:
   ldouble Val;
 public:
   static const ldouble Mn;
   static const ldouble Mx;
-
   TLFlt(): Val(0){}
   TLFlt(const ldouble& _Val): Val(_Val){}
   operator ldouble() const {return Val;}
@@ -1548,7 +1267,6 @@ public:
   void Save(TSOut& SOut) const {SOut.Save(Val);}
   void LoadXml(const PXmlTok& XmlTok, const TStr& Nm);
   void SaveXml(TSOut& SOut, const TStr& Nm) const;
-
   TLFlt& operator=(const TLFlt& LFlt){Val=LFlt.Val; return *this;}
   bool operator==(const TLFlt& LFlt) const _CMPWARN {return Val==LFlt.Val;}
   bool operator==(const ldouble& LFlt) const _CMPWARN {return Val==LFlt;}
@@ -1558,10 +1276,8 @@ public:
   TLFlt& operator+=(const ldouble& LFlt){Val+=LFlt; return *this;}
   TLFlt& operator-=(const ldouble& LFlt){Val-=LFlt; return *this;}
   int GetMemUsed() const {return sizeof(TLFlt);}
-
   int GetPrimHashCd() const {Fail; return 0;}
   int GetSecHashCd() const {Fail; return 0;}
-
   static TStr GetStr(const ldouble& Val, const int& Width=-1, const int& Prec=-1);
   static TStr GetStr(const TLFlt& LFlt, const int& Width=-1, const int& Prec=-1){
     return GetStr(LFlt.Val, Width, Prec);}
@@ -1569,9 +1285,6 @@ public:
   static TStr GetStr(const ldouble& Val, const TStr& FmtStr){
     return GetStr(Val, FmtStr.CStr());}
 };
-
-/////////////////////////////////////////////////
-// Float-Rectangle
 class TFltRect{
 public:
   TFlt MnX, MnY, MxX, MxY;
@@ -1590,31 +1303,19 @@ public:
     MnX.Save(SOut); MnY.Save(SOut); MxX.Save(SOut); MxY.Save(SOut);}
   void LoadXml(const PXmlTok& XmlTok, const TStr& Nm);
   void SaveXml(TSOut& SOut, const TStr& Nm) const;
-
   TFltRect& operator=(const TFltRect& FltRect){
     MnX=FltRect.MnX; MnY=FltRect.MnY; MxX=FltRect.MxX; MxY=FltRect.MxY;
     return *this;}
-
-  // get coordinates
   double GetMnX() const {return MnX;}
   double GetMnY() const {return MnY;}
   double GetMxX() const {return MxX;}
   double GetMxY() const {return MxY;}
-
-  // get lengths
   double GetXLen() const {return MxX-MnX;}
   double GetYLen() const {return MxY-MnY;}
-
-  // get centers
   double GetXCenter() const {return MnX+(MxX-MnX)/2;}
   double GetYCenter() const {return MnY+(MxY-MnY)/2;}
-
-  // tests
   bool IsXYIn(const double& X, const double& Y) const {
     return (MnX<=X)&&(X<=MxX)&&(MnY<=Y)&&(Y<=MxY);}
   static bool Intersection(const TFltRect& Rect1, const TFltRect& Rect2);
-
-  // string
   TStr GetStr() const;
 };
-
