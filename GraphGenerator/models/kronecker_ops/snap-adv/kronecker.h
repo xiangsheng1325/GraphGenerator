@@ -3,8 +3,8 @@
 
 #include "Snap.h"
 
-/////////////////////////////////////////////////
-// Dense Kronecker Matrix
+//
+//
 class TKroneckerLL;
 typedef TPt<TKroneckerLL> PKroneckerLL;
 
@@ -26,11 +26,11 @@ public:
   int GetPrimHashCd() const { return SeedMtx.GetPrimHashCd(); }
   int GetSecHashCd() const { return SeedMtx.GetSecHashCd(); }
 
-  // seed matrix
+  //
   int GetDim() const { return MtxDim; }
   int Len() const { return SeedMtx.Len(); }
   bool Empty() const { return SeedMtx.Empty(); }
-  bool IsProbMtx() const; // probability (not log-lihelihood) matrix
+  bool IsProbMtx() const; //
 
   TFltV& GetMtx() { return SeedMtx; }
   const TFltV& GetMtx() const { return SeedMtx; }
@@ -39,7 +39,7 @@ public:
   void PutAllMtx(const double& Val) { SeedMtx.PutAll(Val); }
   void GenMtx(const int& Dim) { MtxDim=Dim;  SeedMtx.Gen(Dim*Dim); }
   void SetEpsMtx(const double& Eps1, const double& Eps0, const int& Eps1Val=1, const int& Eps0Val=0);
-  void SetForEdges(const int& Nodes, const int& Edges); // scales the values to allow E edges
+  void SetForEdges(const int& Nodes, const int& Edges); //
   void AddRndNoise(const double& SDev);
   TStr GetMtxStr() const;
 
@@ -51,7 +51,7 @@ public:
   int GetNodes(const int& NIter) const;
   int GetEdges(const int& NIter) const;
   int GetKronIter(const int& Nodes) const;
-  int GetNZeroK(const PNGraph& Graph) const; // n0^k so that > Graph->GetNodes
+  int GetNZeroK(const PNGraph& Graph) const; //
   double GetEZero(const int& Edges, const int& KronIter) const;
   double GetMtxSum() const;
   double GetRowSum(const int& RowId) const;
@@ -62,28 +62,28 @@ public:
   void GetProbMtx(TKronMtx& ProbMtx);
   void Swap(TKronMtx& KronMtx);
 
-  // edge probability and log-likelihood
-  double GetEdgeProb(int NId1, int NId2, const int& NKronIters) const; // given ProbMtx
-  double GetNoEdgeProb(int NId1, int NId2, const int& NKronIters) const; // given ProbMtx
-  double GetEdgeLL(int NId1, int NId2, const int& NKronIters) const; // given LLMtx
-  double GetNoEdgeLL(int NId1, int NId2, const int& NKronIters) const; // given LLMtx
-  double GetApxNoEdgeLL(int NId1, int NId2, const int& NKronIters) const; // given LLMtx
-  bool IsEdgePlace(int NId1, int NId2, const int& NKronIters, const double& ProbTresh) const; // place an edge
-  // derivative of edge log-likelihood
-  double GetEdgeDLL(const int& ParamId, int NId1, int NId2, const int& NKronIters) const; // given LLMtx
-  double GetNoEdgeDLL(const int& ParamId, int NId1, int NId2, const int& NKronIters) const; // given LLMtx
-  double GetApxNoEdgeDLL(const int& ParamId, int NId1, int NId2, const int& NKronIters) const; // given LLMtx
+  //
+  double GetEdgeProb(int NId1, int NId2, const int& NKronIters) const; //
+  double GetNoEdgeProb(int NId1, int NId2, const int& NKronIters) const; //
+  double GetEdgeLL(int NId1, int NId2, const int& NKronIters) const; //
+  double GetNoEdgeLL(int NId1, int NId2, const int& NKronIters) const; //
+  double GetApxNoEdgeLL(int NId1, int NId2, const int& NKronIters) const; //
+  bool IsEdgePlace(int NId1, int NId2, const int& NKronIters, const double& ProbTresh) const; //
+  //
+  double GetEdgeDLL(const int& ParamId, int NId1, int NId2, const int& NKronIters) const; //
+  double GetNoEdgeDLL(const int& ParamId, int NId1, int NId2, const int& NKronIters) const; //
+  double GetApxNoEdgeDLL(const int& ParamId, int NId1, int NId2, const int& NKronIters) const; //
 
-  // edge prob from node signature
+  //
   static uint GetNodeSig(const double& OneProb = 0.5);
   double GetEdgeProb(const uint& NId1Sig, const uint& NId2Sig, const int& NIter) const;
 
-  // from the current (probabilistic) adjacency matrix
+  //
   PNGraph GenThreshGraph(const double& Thresh) const;
   PNGraph GenRndGraph(const double& RndFact=1.0) const;
 
   static int GetKronIter(const int& GNodes, const int& SeedMtxSz);
-  // from the seed matrix
+  //
   static PNGraph GenKronecker(const TKronMtx& SeedMtx, const int& NIter, const bool& IsDir, const int& Seed=0);
   static PNGraph GenFastKronecker(const TKronMtx& SeedMtx, const int& NIter, const bool& IsDir, const int& Seed=0);
   static PNGraph GenFastKronecker(const TKronMtx& SeedMtx, const int& NIter, const int& Edges, const bool& IsDir, const int& Seed=0);
@@ -93,12 +93,12 @@ public:
   static void PlotCmpGraphs(const TVec<TKronMtx>& SeedMtxV, const PNGraph& Graph, const TStr& FNmPref, const TStr& Desc);
 
   static void KronMul(const TKronMtx& LeftPt, const TKronMtx& RightPt, TKronMtx& OutMtx);
-  static void KronSum(const TKronMtx& LeftPt, const TKronMtx& RightPt, TKronMtx& OutMtx); // log powering
+  static void KronSum(const TKronMtx& LeftPt, const TKronMtx& RightPt, TKronMtx& OutMtx); //
   static void KronPwr(const TKronMtx& KronPt, const int& NIter, TKronMtx& OutMtx);
 
   void Dump(const TStr& MtxNm = TStr(), const bool& Sort = false) const;
-  static double GetAvgAbsErr(const TKronMtx& Kron1, const TKronMtx& Kron2); // avg L1 on (sorted) parameters
-  static double GetAvgFroErr(const TKronMtx& Kron1, const TKronMtx& Kron2); // avg L2 on (sorted) parameters
+  static double GetAvgAbsErr(const TKronMtx& Kron1, const TKronMtx& Kron2); //
+  static double GetAvgFroErr(const TKronMtx& Kron1, const TKronMtx& Kron2); //
   static TKronMtx GetMtx(TStr MatlabMtxStr);
   static TKronMtx GetRndMtx(const int& Dim, const double& MinProb);
   static TKronMtx GetInitMtx(const int& Dim, const int& Nodes, const int& Edges);
@@ -108,45 +108,45 @@ public:
   static void PutRndSeed(const int& Seed) { TKronMtx::Rnd.PutSeed(Seed); }
 };
 
-/////////////////////////////////////////////////
-// Kronecker Log Likelihood
+//
+//
 
-enum TKronEMType {  kronNodeMiss = 0, kronFutureLink, kronEdgeMiss }; /// !!!!! MYUNGHWAN, CHECK!
+enum TKronEMType {  kronNodeMiss = 0, kronFutureLink, kronEdgeMiss }; //
 
 class TKroneckerLL {
 public:
 private:
   TCRef CRef;
-  PNGraph Graph;         // graph to fit
+  PNGraph Graph;         //
   TInt Nodes, KronIters;
 
-  TFlt PermSwapNodeProb; // permutation proposal distribution (swap edge endpoins vs. swap random nodes)
-//  TIntPrV GEdgeV;        // edge vector (for swap edge permutation proposal)
-  TIntTrV GEdgeV;        // edge vector (for swap edge permutation proposal) /// !!!!! MYUNGHWAN, CHECK!
-  TIntTrV LEdgeV;        // latent edge vector
-  TInt LSelfEdge;        // latent self edges
-  TIntV NodePerm;        // current permutation
-  TIntV InvertPerm;      // current invert permutation
+  TFlt PermSwapNodeProb; //
+//
+  TIntTrV GEdgeV;        //
+  TIntTrV LEdgeV;        //
+  TInt LSelfEdge;        //
+  TIntV NodePerm;        //
+  TIntV InvertPerm;      //
 
-  TInt RealNodes;	// # of observed nodes (for KronEM)
-  TInt RealEdges;	// # of observed edges (for link prediction)
+  TInt RealNodes;	//
+  TInt RealEdges;	//
 
-  TKronMtx ProbMtx, LLMtx; // Prob and LL matrices (parameters)
-  TFlt LogLike; // LL at ProbMtx
-  TFltV GradV;  // DLL at ProbMtx (gradient)
+  TKronMtx ProbMtx, LLMtx; //
+  TFlt LogLike; //
+  TFltV GradV;  //
 
-  TKronEMType EMType;	// Latent setting type for EM
-  TInt MissEdges;		// # of missing edges (if unknown, -1)
+  TKronEMType EMType;	//
+  TInt MissEdges;		//
 
-  TBool DebugMode;		// Debug mode flag
-  TFltV LLV;			// Log-likelihood (per EM iteration)
-  TVec<TKronMtx> MtxV;	// Kronecker initiator matrix (per EM iteration)
+  TBool DebugMode;		//
+  TFltV LLV;			//
+  TVec<TKronMtx> MtxV;	//
 
 public:
-  // RS 07/03/12, changed the order in the constructor initializer list
-  //    so that it matches the declaration order. This changes also
-  //    got rid of the compilation warnings. This is the old order:
-  // TKroneckerLL() : Nodes(-1), KronIters(-1), PermSwapNodeProb(0.2), LogLike(TKronMtx::NInf), EMType(kronNodeMiss), RealNodes(-1), RealEdges(-1), MissEdges(-1), DebugMode(false) { }
+  //
+  //
+  //
+  //
   TKroneckerLL() : Nodes(-1), KronIters(-1), PermSwapNodeProb(0.2), RealNodes(-1), RealEdges(-1), LogLike(TKronMtx::NInf), EMType(kronNodeMiss), MissEdges(-1), DebugMode(false) { }
   TKroneckerLL(const PNGraph& GraphPt, const TFltV& ParamV, const double& PermPSwapNd=0.2);
   TKroneckerLL(const PNGraph& GraphPt, const TKronMtx& ParamMtx, const double& PermPSwapNd=0.2);
@@ -168,34 +168,34 @@ public:
   const TFltV& GetLLHist() const { return LLV; }
   const TVec<TKronMtx>& GetParamHist() const { return MtxV; }
 
-  // check actual nodes and edges (for KronEM)
+  //
   bool IsObsNode(const int& NId) const { IAssert(RealNodes > 0);	return (NId < RealNodes);	}
   bool IsObsEdge(const int& NId1, const int& NId2) const { IAssert(RealNodes > 0);	return ((NId1 < RealNodes) && (NId2 < RealNodes));	}
   bool IsLatentNode(const int& NId) const { return !IsObsNode(NId);	}
   bool IsLatentEdge(const int& NId1, const int& NId2) const { return !IsObsEdge(NId1, NId2);	}
 
-  // node permutation
+  //
   void SetPerm(const char& PermId);
-  void SetOrderPerm(); // identity
-  void SetRndPerm();   // random
-  void SetDegPerm();   // node degrees
-  void SetBestDegPerm();	// best matched degrees
+  void SetOrderPerm(); //
+  void SetRndPerm();   //
+  void SetDegPerm();   //
+  void SetBestDegPerm();	//
   void SetPerm(const TIntV& NodePermV) { NodePerm = NodePermV; SetIPerm(NodePerm); }
-  void SetIPerm(const TIntV& Perm);	// construct invert permutation
+  void SetIPerm(const TIntV& Perm);	//
   const TIntV& GetPermV() const { return NodePerm; }
 
-  // handling isolated nodes to fit # of nodes to Kronecker graphs model
+  //
   void AppendIsoNodes();
   void RestoreGraph(const bool RestoreNodes = true);
 
-  // full graph LL
+  //
   double GetFullGraphLL() const;
   double GetFullRowLL(int RowId) const;
   double GetFullColLL(int ColId) const;
-  // empty graph LL
+  //
   double GetEmptyGraphLL() const;
   double GetApxEmptyGraphLL() const;
-  // graph LL
+  //
   void InitLL(const TFltV& ParamV);
   void InitLL(const TKronMtx& ParamMtx);
   void InitLL(const PNGraph& GraphPt, const TKronMtx& ParamMtx);
@@ -205,9 +205,9 @@ public:
   double GetAbsErr() const { return fabs(pow((double)Graph->GetEdges(), 1.0/double(KronIters)) - ProbMtx.GetMtxSum()); }
   double NodeLLDelta(const int& NId) const;
   double SwapNodesLL(const int& NId1, const int& NId2);
-  bool SampleNextPerm(int& NId1, int& NId2); // sampling from P(perm|graph)
+  bool SampleNextPerm(int& NId1, int& NId2); //
 
-  // derivative of the log-likelihood
+  //
   double GetEmptyGraphDLL(const int& ParamId) const;
   double GetApxEmptyGraphDLL(const int& ParamId) const;
   const TFltV& CalcGraphDLL();
@@ -218,12 +218,12 @@ public:
   const TFltV& GetDLL() const { return GradV; }
   double GetDLL(const int& ParamId) const { return GradV[ParamId]; }
 
-  // gradient
+  //
   void SampleGradient(const int& WarmUp, const int& NSamples, double& AvgLL, TFltV& GradV);
   double GradDescent(const int& NIter, const double& LrnRate, double MnStep, double MxStep, const int& WarmUp, const int& NSamples);
   double GradDescent2(const int& NIter, const double& LrnRate, double MnStep, double MxStep, const int& WarmUp, const int& NSamples);
 
-  // KronEM
+  //
   void SetRandomEdges(const int& NEdges, const bool isDir = true);
   void MetroGibbsSampleSetup(const int& WarmUp);
   void MetroGibbsSampleNext(const int& WarmUp, const bool DLLUpdate = false);
@@ -246,8 +246,8 @@ public:
 };
 
 
-/////////////////////////////////////////////////
-// Add Noise to Graph
+//
+//
 class TKronNoise {
 public:
 	TKronNoise() {};
@@ -260,8 +260,8 @@ public:
 };
 
 
-/////////////////////////////////////////////////
-// Kronecker Log Likelihood Maximization
+//
+//
 class TKronMaxLL {
 public:
   class TFEval {
@@ -276,8 +276,8 @@ public:
       LogLike=FEval.LogLike; GradV=FEval.GradV; } return *this; }
   };
 private:
-  //TInt WarmUp, NSamples;
-  THash<TKronMtx, TFEval> FEvalH; // cached gradients
+  //
+  THash<TKronMtx, TFEval> FEvalH; //
   TKroneckerLL KronLL;
 public:
   TKronMaxLL(const PNGraph& GraphPt, const TKronMtx& StartParam) : KronLL(GraphPt, StartParam) { }
@@ -286,11 +286,7 @@ public:
   void GradDescent(const int& NIter, const double& LrnRate, const double& MnStep, const double& MxStep,
     const double& WarmUp, const double& NSamples);
 
-  /*void EvalNewEdgeP(const TKronMtx& ProbMtx);
-  double GetLL(const TFltV& ThetaV);
-  void GetDLL(const TFltV& ThetaV, TFltV& DerivV);
-  double GetDLL(const TFltV& ThetaV, const int& ParamId);
-  //void MaximizeLL(const int& NWarmUp, const int& Samples);//*/
+
 
   static void RoundTheta(const TFltV& ThetaV, TFltV& NewThetaV);
   static void RoundTheta(const TFltV& ThetaV, TKronMtx& Kronecker);
@@ -298,8 +294,8 @@ public:
   static void Test();
 };
 
-/////////////////////////////////////////////////
-// Kronecker Fitting using Metrod of Moments (by Art Owen)
+//
+//
 class TKronMomentsFit {
 public:
   double Edges, Hairpins, Tripins, Triads;
@@ -324,7 +320,7 @@ public:
     const double Step = 0.01;
     double MinScore=TFlt::Mx;
     double A=0, B=0, C=0;
-    //Edges=log(Edges);  Hairpins=log(Hairpins);  Tripins=log(Tripins);  Triads=log(Triads);
+    //
     for (double a = 1.0; a > Step; a-=Step) {
       for (double b = Step; b <= 1.0; b+=Step) {
         for (double c = Step; c <= a; c+=Step) {
@@ -347,14 +343,14 @@ public:
           if (EH < 0) { EH = 1; }
           if (ET < 0) { ET = 1; }
           if (ED < 0) { ED = 1; }
-          //EE=log(EE); EH=log(EH); ET=log(ET); ED=log(ED);
+          //
           double Score = pow(Edges-EE,2)/EE + pow(Hairpins-EH ,2)/EH + pow(Tripins-ET, 2)/ET + pow(Triads-ED, 2)/ED;
-          //double Score = fabs(Edges-EE)/EE + fabs(Hairpins-EH)/EH + fabs(Tripins-ET)/ET + fabs(Triads-ED)/ED;
-          //double Score = log(pow(Edges-EE,2)/EE) + log(pow(Hairpins-EH,2)/EH) + log(pow(Tripins-ET, 2)/ET) + log(pow(Triads-ED, 2)/ED);
+          //
+          //
           if (MinScore > Score || (a==0.9 && b==0.6 && c==0.2) || (TMath::IsInEps(a-0.99,1e-6) && TMath::IsInEps(b-0.57,1e-6) && TMath::IsInEps(c-0.05,1e-6)))
           {
             printf("%.03f %.03f %0.03f %10.4f  %10.10g\t%10.10g\t%10.10g\t%10.10g\n", a,b,c, log10(Score), EE, EH, ET, ED);
-            //printf("%.03f %.03f %0.03f %g\n", a,b,c, log(Score));
+            //
             A=a; B=b; C=c; MinScore=Score;
           }
         }
@@ -367,14 +363,14 @@ public:
   static void Test() {
     TFIn FIn("as20.ngraph");
     PUNGraph G = TSnap::ConvertGraph<PUNGraph>(TNGraph::Load(FIn));
-    //PUNGraph G = TKronMtx::GenFastKronecker(TKronMtx::GetMtx("0.9, 0.6; 0.6, 0.2"), 14, false, 0)->GetUNGraph();
-    //PUNGraph G = TUNGraph::GetSmallGraph();
+    //
+    //
     TSnap::PrintInfo(G);
     TSnap::DelSelfEdges(G);
     TSnap::PrintInfo(G);
     TKronMomentsFit Fit(G);
     printf("iter %d\n", TKronMtx::GetKronIter(G->GetNodes(), 2));
-    Fit.EstABC(TKronMtx::GetKronIter(G->GetNodes(), 2)); //*/
+    Fit.EstABC(TKronMtx::GetKronIter(G->GetNodes(), 2)); //
   }
 };
 
