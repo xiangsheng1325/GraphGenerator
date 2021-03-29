@@ -379,59 +379,5 @@ public:
 };
 
 
-/////////////////////////////////////////////////
-// Kronecker Phase Plot
-/*class TKronPhasePlot {
-public:
-  class TPhasePoint {
-  public:
-    TFlt Alpha, Beta;
-    TGrowthStat GrowthStat;
-  public:
-    TPhasePoint() { }
-    TPhasePoint(const double& A, const double& B, const TGrowthStat& GS) : Alpha(A), Beta(B), GrowthStat(GS) { }
-    TPhasePoint(TSIn& SIn) : Alpha(SIn), Beta(SIn), GrowthStat(SIn) { }
-    void Save(TSOut& SOut) const { Alpha.Save(SOut);  Beta.Save(SOut);  GrowthStat.Save(SOut); }
-  };
-  typedef TVec<TPhasePoint> TPhasePointV;
-public:
-  TPhasePointV PhaseV;
-public:
-  TKronPhasePlot() { }
-  TKronPhasePlot(const TKronPhasePlot& Phase) : PhaseV(Phase.PhaseV) { }
-  TKronPhasePlot(TSIn& SIn) : PhaseV(SIn) { }
-  void Save(TSOut& SOut) const { PhaseV.Save(SOut);  }
-  void SaveMatlab(const TStr& OutFNm) const;
-
-  static void KroneckerPhase(const TStr& MtxId, const int& MxIter,
-    const double& MnAlpha, const double& MxAlpha, const double& AlphaStep,
-    const double& MnBeta, const double& MxBeta, const double& BetaStep,
-    const TStr& FNmPref);
-};*/
-
-/*// for conjugate gradient
-  class TFunc {
-  private:
-    TKronMaxLL* CallBack;
-  public:
-    TFunc(TKronMaxLL* CallBackPt) : CallBack(CallBackPt) { }
-    TFunc(const TFunc& Func) : CallBack(Func.CallBack) { }
-    TFunc& operator = (const TFunc& Func) { CallBack=Func.CallBack; return *this; }
-    double FVal(const TFltV& Point) { return -CallBack->GetLL(Point); }
-    void FDeriv(const TFltV& Point, TFltV& DerivV);
-  };
-public:
-  // log barier
-  class TLogBarFunc {
-  private:
-    TKronMaxLL* CallBack;
-    double T;
-  public:
-    TLogBarFunc(TKronMaxLL* CallBackPt, const double& t=0.5) : CallBack(CallBackPt), T(t) { }
-    TLogBarFunc(const TLogBarFunc& Func) : CallBack(Func.CallBack), T(Func.T) { }
-    TLogBarFunc& operator = (const TLogBarFunc& Func) { CallBack=Func.CallBack; T=Func.T; return *this; }
-    double FVal(const TFltV& Point);
-    void FDeriv(const TFltV& Point, TFltV& DerivV);
-  };*/
 
 #endif

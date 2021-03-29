@@ -139,7 +139,7 @@ TChA& TStrUtil::GetXmlTagVal(TXmlLx& XmlLx, const TChA& TagNm) {
     EAssertR(XmlLx.GetSym() == xsyETag, TagNm);
   } else {
     EAssertR(NextSym == xsyETag, TagNm); // empty tag
-    //printf("  token: %s empty! %s\n", XmlLx.TagNm.CStr(), XmlLx.GetFPosStr().CStr());
+    //
   }
   EAssertR(XmlLx.TagNm == TagNm, TagNm);
   return TagVal;
@@ -155,7 +155,7 @@ void TStrUtil::GetXmlTagNmVal(TXmlLx& XmlLx, TChA& TagNm, TChA& TagVal) {
     EAssertR(XmlLx.GetSym() == xsyETag, TagNm);
   } else {
     EAssertR(NextSym == xsyETag, TagNm); // empty tag
-    //printf("  token: %s empty! %s\n", XmlLx.TagNm.CStr(), XmlLx.GetFPosStr().CStr());
+    //
   }
 }
 
@@ -174,12 +174,6 @@ bool TStrUtil::GetXmlTagNmVal2(TXmlLx& XmlLx, TChA& TagNm, TChA& TagVal, const b
     XmlLx.GetSym();
   }
   return true;
-  //if (NextSym == xsyStr) {
-  //  EAssertR(XmlLx.GetSym() == xsyETag, TagNm);
-  //} else {
-  //  EAssertR(NextSym == xsyETag, TagNm); // empty tag
-  //  printf("  token: %s empty! %s\n", XmlLx.TagNm.CStr(), XmlLx.GetFPosStr().CStr());
-  //}
 }
 
 
@@ -217,34 +211,11 @@ int GetNthOccurence(const TChA& Url, const int& Count, const char Ch='/') {
 // get website (GetDomNm2 or blog url)
 TChA TStrUtil::GetWebsiteNm(const TChA& PostUrlStr) {
   TChA DomNm = TStrUtil::GetDomNm2(PostUrlStr);
-  // http://blog.myspace.com/index.cfm?fuseaction=blog.view&friendid=141560&blogid=420009539
+  //
   if (DomNm == "blog.myspace.com") {
     return PostUrlStr.GetSubStr(7, GetNthOccurence(PostUrlStr, 2, '&')-1);
   }
-  // For these websites take the domain name and 1st directory: http://blogs.msdn.com/squasta
-  // http://blogs.msdn.com/squasta/archive/2008/08/11/annonces-microsoft-au-black-hat-2008.aspx
-  // http://ameblo.jp/baptism/entry-10126216277.html
-  // http://xfruits.com/fcuignet/?id=8793&clic=249862689&url=http%3a%2f%2fnews.google.com%2fnews%2furl%3fsa%3dt%26ct%3dfr%2f9-0%26fd%3dr%26url%3dhttp%3a%2f%2fwww.investir-en-tunisie.net%2fnews%2farticle.php%253fid%253d5026%26cid%3d1241943065%26ei%3doy6gslh9jzycxahkjfxucw%26usg%3dafqjcnen_bczqldodsyga6zps2axphxl3q
-  // http://scienceblogs.com/grrlscientist/2008/08/reader_comments.php
-  // http://blogs.sun.com/geertjan/entry/wicket_in_action_undoubtedly_the
-  // http://blog.wired.com/gadgets/2008/08/apple-sells-60.html
-  // http://weblogs.asp.net/mehfuzh/archive/2008/08/11/linqextender-1-4-enhanced-object-tracking.aspx
-  // http://blogs.technet.com/plitpromicrosoftcom/archive/2008/08/11/nowa-karta-sim.aspx
-  // http://blogs.guardian.co.uk/greenslade/2008/08/murdoch_aims_to_boost_subscrib.html
-  // http://blogs.clarin.com/quimeykiltru/2008/8/11/mentira-mentira-creo
-  // http://blogs.sun.com/geertjan/entry/wicket_in_action_undoubtedly_the
-  // http://blog.wired.com/gadgets/2008/08/apple-sells-60.html
-  // http://weblogs.asp.net/mehfuzh/archive/2008/08/11/linqextender-1-4-enhanced-object-tracking.aspx
-  // http://blogs.technet.com/plitpromicrosoftcom/archive/2008/08/11/nowa-karta-sim.aspx
-  // http://blogs.guardian.co.uk/greenslade/2008/08/murdoch_aims_to_boost_subscrib.html
-  // http://blogs.clarin.com/quimeykiltru/2008/8/11/mentira-mentira-creo
-  // http://blogs.zdnet.com/hardware/?p=2391
-  // http://blogs.citypages.com/sports/2008/08/ufc_87_seek_and.php
-  // http://voices.washingtonpost.com/achenblog/2008/08/no_medal_for_bush.html
-  // http://blog.tv2.dk/ole.mork/entry254689.html
-  // http://blogs.menomoneefallsnow.com/in_the_race/archive/2008/08/11/sometimes-it-s-about-how-you-play-the-game.asp
-  // http://weblogs.baltimoresun.com/entertainment/midnight_sun/blog/2008/08/heidis_bad_break_with_dubai_pa.html
-  // http://eonline.com/uberblog/b23076_youtubular_from_rickrolled_barackrolled.html?sid=rss_topstories&utm_source=eo
+  //
   if (DomNm=="blogs.msdn.com" || DomNm=="ameblo.jp" || DomNm=="xfruits.com" || DomNm=="scienceblogs.com" || DomNm=="blogs.sun.com"
     || DomNm=="blog.wired.com" || DomNm=="weblogs.asp.net" || DomNm=="blogs.technet.com" || DomNm=="blogs.guardian.co"
     || DomNm=="blogs.clarin.com" || DomNm=="blogs.sun.com" || DomNm=="blog.wired.com" || DomNm=="weblogs.asp.net"
@@ -253,8 +224,7 @@ TChA TStrUtil::GetWebsiteNm(const TChA& PostUrlStr) {
     || DomNm=="blogs.menomoneefallsnow.com" || DomNm=="weblogs.baltimoresun.com" || DomNm=="eonline.com") {
       return PostUrlStr.GetSubStr(7, GetNthOccurence(PostUrlStr, 4)-1);
   }
-  // http://digg.com/submit?phase=2&amp;url=http://socialitelife.celebuzz.com/archive/2008/07/31/and_then_a_hero_came_along.php&amp;title=and
-  // http://digg.com/general_sciences/mental_images_are_like_pictures_slide_show
+  //
   if (DomNm == "digg.com") {
     if (PostUrlStr.IsPrefix("http://digg.com/submit?")) {
       const int Url = PostUrlStr.SearchStr(";url=");
@@ -263,37 +233,32 @@ TChA TStrUtil::GetWebsiteNm(const TChA& PostUrlStr) {
     } else {
       return PostUrlStr.GetSubStr(7, GetNthOccurence(PostUrlStr, 4)-1); }
   }
-  // For these websites take the domain name and 2 directories: http://bbc.co.uk/blogs/thereporters/
-  // http://bbc.co.uk/blogs/thereporters/markdevenport/2008/08/back_to_porridge.html
-  // http://nydailynews.com/blogs/subwaysquawkers/2008/08/anaheim-is-no-magic-kingdom-fo.html
-  // http://newsbusters.org/blogs/p-j-gladnick/2008/08/11/sf-chronicle-writer-predicts-global-warming-shellfish-invas
-  // http://nydailynews.com/blogs/subwaysquawkers/2008/08/anaheim-is-no-magic-kingdom-fo.html
+  //
   if (PostUrlStr.IsPrefix("http://nydailynews.com/blogs/") || PostUrlStr.IsPrefix("http://bbc.co.uk/blogs/")
     || PostUrlStr.IsPrefix("http://nydailynews.com/blogs/") || PostUrlStr.IsPrefix("http://newsbusters.org/blogs/")) {
     return PostUrlStr.GetSubStr(7, GetNthOccurence(PostUrlStr, 5)-1);
   }
-  // http://feeds.feedburner.com/~r/adesblog/ ~3/361711640
+  //
   if (DomNm=="feeds.feedburner.com") {
     return PostUrlStr.GetSubStr(7, GetNthOccurence(PostUrlStr, 5)-1);
   }
-  // http://groups.google.com/group/news.admin.net-abuse.sightings/browse_thread/thread/8452c47949453216/f07daa509b90295c?show_docid=f07daa509b90295c
+  //
   if (DomNm=="groups.google.com") {
     return PostUrlStr.GetSubStr(7, GetNthOccurence(PostUrlStr, 5)-1);
   }
-  // http://news.google.com/news/url?sa=t&ct=us/20-0&fd=r&url=http://www.theobserver.ca/articledisplay.aspx%3fe%3d1151495&cid=0&ei=yswgsjpndpbi8atc9knacw&usg=afqjcnhrbg-nc9z6ymtqfkear3_npwqqxa
+  //
   if (DomNm=="news.google.com") { // redirect
     const int UrlPos = PostUrlStr.SearchStr("&url=");
     if (UrlPos != -1) {
       return GetWebsiteNm(PostUrlStr.GetSubStr(UrlPos+5, PostUrlStr.SearchCh('&', UrlPos+5))); }
   }
-  // http://bloggrevyen.no/go/110340/http://blog.christergulbrandsen.com/2008/08/11/is-nationalism-the-only-way-to-de
+  //
   if (DomNm == "bloggrevyen.no") { // redirect
     const int Http2 = PostUrlStr.SearchStr("/http://");
     if (Http2!=-1) {
       return GetWebsiteNm(PostUrlStr.GetSubStr(Http2+1, PostUrlStr.Len()-1)); }
   }
-  //http://us.rd.yahoo.com/dailynews/rss/search/urgent+care/sig=11phgb4tu/*http%3a//www.newswise.com/articles/view/543340/?sc=rsmn
-  //http://ca.rd.yahoo.com/dailynews/rss/topstories/*http://ca.news.yahoo.com/s/reuters/080801/n_top_news/news_afgha
+  //
   if (DomNm.IsSuffix(".rd.yahoo.com")) {
     const int Http2 = PostUrlStr.SearchStr("/*");
     if (Http2!=-1) {
@@ -368,7 +333,7 @@ TChA TStrUtil::GetCleanWrdStr(const TChA& ChA) {
   return OutChA;
 }
 
-// space seprated sequence of words (includes all non-blank characters, i.e., punctuations)
+//
 TChA TStrUtil::GetCleanStr(const TChA& ChA) {
   char *b = (char *) ChA.CStr();
   while (*b && ! TCh::IsAlNum(*b)) { b++; }
@@ -481,21 +446,9 @@ int TStrUtil::SplitSentences(TChA& ChA, TVec<char *>& SentenceV) {
 void TStrUtil::RemoveHtmlTags(const TChA& HtmlStr, TChA& TextStr) {
   TextStr.Clr();
   char *StrB, *StrE;
-  // use full page html: skip till <body>
-  //PageHtmlStr = "<script fdsfs>  fsdfsd </script> jure";
-  /*if (UseFullHtml) {
-    StrB = PageHtmlStr.CStr();
-    StrE = StrB+PageHtmlStr.Len();
-    char * NewB = strstr(StrB, "<body>");
-    if (NewB != NULL) { StrB = NewB+6; }
-    char * NewE = strstr(StrB, "body>");
-    if (NewE != NULL) {
-      while (true) {
-        char *E=strstr(NewE+4, "body>");
-        if (E == NULL) { break; }  NewE = E; }
-      StrE = NewE;
-    }
-  } else {  // only extracted post html*/
+  //
+  //
+  /**/
   StrB = (char *) HtmlStr.CStr();
   StrE = (char *) StrB+HtmlStr.Len(); //}
   for (char *e = StrB; e < StrE; ) {
@@ -561,13 +514,6 @@ void TStrUtil::GetAddWIdV(TStrHash<TInt>& StrH, const char *CStr, TIntV& WIdV) {
 }
 
 // Parse time in various formats:
-//   10:16, 16 Sep 2004
-//   10:20, 2004 Sep 16
-//   2005-07-07 20:30:35
-//   23:24:07, 2005-07-10
-//   9 July 2005 14:38
-//   21:16, July 9, 2005
-//   06:02, 10 July 2005
 bool TStrUtil::GetTmFromStr(const char* TmStr, TSecTm& Tm) {
   static TStrV MonthV1, MonthV2;
   if (MonthV1.Empty()) {
@@ -698,19 +644,32 @@ void TStrUtil::GetStdNameV(TStr AuthorNames, TStrV& StdNameV) {
 ////////////////////////////////////////////////
 /// Routines to benchmark table operations
 
-double TStopwatch::Tick() {
-  //return clock() / ((double)CLOCKS_PER_SEC);
-#ifdef USE_OPENMP
-  return omp_get_wtime();
-#else
-#ifdef GLib_WIN32
-  return GetTickCount() / 1000.0;
-#else
-  struct rusage rusage;
-  getrusage(RUSAGE_SELF, &rusage);
-
-  float cputime =
-  ((float) (rusage.ru_utime.tv_usec + rusage.ru_stime.tv_usec) / 1000000) +
+double TStopwatch::Tick() {
+
+  //return clock() / ((double)CLOCKS_PER_SEC);
+
+#ifdef USE_OPENMP
+
+  return omp_get_wtime();
+
+#else
+
+#ifdef GLib_WIN32
+
+  return GetTickCount() / 1000.0;
+
+#else
+
+  struct rusage rusage;
+
+  getrusage(RUSAGE_SELF, &rusage);
+
+
+
+  float cputime =
+
+  ((float) (rusage.ru_utime.tv_usec + rusage.ru_stime.tv_usec) / 1000000) +
+
   ((float) (rusage.ru_utime.tv_sec + rusage.ru_stime.tv_sec));
   return cputime;
 #endif

@@ -1,56 +1,56 @@
-/////////////////////////////////////////////////
-// Connected Components
+
+
 class TCnCom;
 typedef TVec<TCnCom> TCnComV;
 
 namespace TSnap {
 
-/// Returns (via output parameter CnCom) all nodes that are in the same connected component as node NId.
+
 template <class PGraph> void GetNodeWcc(const PGraph& Graph, const int& NId, TIntV& CnCom);
-/// Tests whether the Graph is (weakly) connected.
+
 template <class PGraph> bool IsConnected(const PGraph& Graph);
-/// Tests whether the Graph is weakly connected.
+
 template <class PGraph> bool IsWeaklyConn(const PGraph& Graph);
-/// Returns a distribution of weakly connected component sizes. ##GetWccSzCnt
+
 template <class PGraph> void GetWccSzCnt(const PGraph& Graph, TIntPrV& WccSzCnt);
-/// Returns all weakly connected components in a Graph. ##GetWccs
+
 template <class PGraph> void GetWccs(const PGraph& Graph, TCnComV& CnComV);
-/// Returns a distribution of strongly connected component sizes. ##GetSccSzCnt
+
 template <class PGraph> void GetSccSzCnt(const PGraph& Graph, TIntPrV& SccSzCnt);
-/// Returns all strongly connected components in a Graph. ##GetSccs
+
 template <class PGraph> void GetSccs(const PGraph& Graph, TCnComV& CnComV);
-/// Returns the fraction of nodes in the largest weakly connected component of a Graph.
+
 template <class PGraph> double GetMxWccSz(const PGraph& Graph);
-/// Returns the fraction of nodes in the largest strongly connected component of a Graph.
+
 template <class PGraph> double GetMxSccSz(const PGraph& Graph);
 
-/// Returns a graph representing the largest weakly connected component on an input Graph. ##GetMxWcc
+
 template <class PGraph> PGraph GetMxWcc(const PGraph& Graph);
-/// Returns a graph representing the largest strongly connected component on an input Graph.  ##GetMxScc
+
 template <class PGraph> PGraph GetMxScc(const PGraph& Graph);
-/// Returns a graph representing the largest bi-connected component on an input Graph. ##GetMxBiCon
+
 template <class PGraph> PGraph GetMxBiCon(const PGraph& Graph);
 
-/// Returns a distribution of bi-connected component sizes. ##GetBiConSzCnt
+
 void GetBiConSzCnt(const PUNGraph& Graph, TIntPrV& SzCntV);
-/// Returns all bi-connected components of a Graph. ##GetBiCon
+
 void GetBiCon(const PUNGraph& Graph, TCnComV& BiCnComV);
-/// Returns articulation points of a Graph. ##GetArtPoints
+
 void GetArtPoints(const PUNGraph& Graph, TIntV& ArtNIdV);
-/// Returns bridge edges of a Graph. ##GetEdgeBridges
+
 void GetEdgeBridges(const PUNGraph& Graph, TIntPrV& EdgeV);
-/// Distribution of sizes of 1-components, maximal number of components that can be disconnected from the Graph by removing a single edge.  ##Get1CnComSzCnt
+
 void Get1CnComSzCnt(const PUNGraph& Graph, TIntPrV& SzCntV);
-/// Returns 1-components: maximal connected components of that can be disconnected from the Graph by removing a single edge. ##Get1CnCom
+
 void Get1CnCom(const PUNGraph& Graph, TCnComV& Cn1ComV);
-/// Returns a graph representing the largest bi-connected component on an undirected Graph. ##GetMxBiCon
+
 PUNGraph GetMxBiCon(const PUNGraph& Graph, const bool& RenumberNodes=false);
 
-}; // namespace TSnap
+};
 
-//#//////////////////////////////////////////////
-/// Connected Component.
-/// Connected component is defined by a vector of its node IDs.
+
+
+
 class TCnCom {
 public:
   TIntV NIdV;
@@ -77,9 +77,9 @@ public:
   const TInt& GetRndNId() const { return NIdV[TInt::Rnd.GetUniDevInt(Len())]; }
   static void Dump(const TCnComV& CnComV, const TStr& Desc=TStr());
   static void SaveTxt(const TCnComV& CnComV, const TStr& FNm, const TStr& Desc=TStr());
-  /// Depth-First-Search.
-  /// Depending on the stage of DFS a different member function of Visitor class is called.
-  /// See source code for details.
+
+
+
   template <class PGraph, class TVisitor>
   static void GetDfsVisitor(const PGraph& Graph, TVisitor& Visitor);
   int GetPrimHashCd() const { return NIdV.GetPrimHashCd(); }
@@ -95,9 +95,9 @@ void TCnCom::GetDfsVisitor(const PGraph& Graph, TVisitor& Visitor) {
   typename PGraph::TObj::TNodeI NI, UI;
   for (NI = Graph->BegNI(); NI < Graph->EndNI(); NI++) {
     U = NI.GetId();
-    if (! ColorH.IsKey(U)) {         // is unvisited node
+    if (! ColorH.IsKey(U)) {
       ColorH.AddDat(U, 1); 
-      Visitor.DiscoverNode(U);       // discover
+      Visitor.DiscoverNode(U);
       Stack.Push(TIntTr(U, 0, Graph->GetNI(U).GetOutDeg()));
       while (! Stack.Empty()) {
         const TIntTr& Top = Stack.Top();
@@ -106,32 +106,32 @@ void TCnCom::GetDfsVisitor(const PGraph& Graph, TVisitor& Visitor) {
         Stack.Pop();
         while (edge != Deg) {
           const int V = UI.GetOutNId(edge);
-          Visitor.ExamineEdge(U, V); // examine edge
+          Visitor.ExamineEdge(U, V);
           if (! ColorH.IsKey(V)) {
-            Visitor.TreeEdge(U, V);  // tree edge
+            Visitor.TreeEdge(U, V);
             Stack.Push(TIntTr(U, ++edge, Deg));
             U = V;
             ColorH.AddDat(U, 1); 
-            Visitor.DiscoverNode(U); // discover
+            Visitor.DiscoverNode(U);
             UI = Graph->GetNI(U);
             edge = 0;  Deg = UI.GetOutDeg();
           }
           else if (ColorH.GetDat(V) == 1) {
-            Visitor.BackEdge(U, V);  // edge upward
+            Visitor.BackEdge(U, V);
             ++edge; }
           else {
-            Visitor.FwdEdge(U, V);   // edge downward
+            Visitor.FwdEdge(U, V);
             ++edge; }
         }
         ColorH.AddDat(U, 2); 
-        Visitor.FinishNode(U);       // finish
+        Visitor.FinishNode(U);
       }
     }
   }
 }
 
-//#//////////////////////////////////////////////
-/// Articulation point Depth-First-Search visitor class.
+
+
 class TArtPointVisitor {
 public:
   THash<TInt, TIntPr> VnLowH;
@@ -156,8 +156,8 @@ public:
     VnLowH.GetDat(NId1).Val2 = TMath::Mn(VnLowH.GetDat(NId1).Val2, VnLowH.GetDat(NId2).Val1); }
 };
 
-//#//////////////////////////////////////////////
-/// Biconnected componetns Depth-First-Search visitor class.
+
+
 class TBiConVisitor {
 public:
   THash<TInt, TIntPr> VnLowH;
@@ -194,8 +194,8 @@ public:
   void FwdEdge(const int& NId1, const int& NId2) { }
 };
 
-//#//////////////////////////////////////////////
-/// Strongly connected componetns Depht-First-Search visitor class.
+
+
 template <class PGraph, bool OnlyCount = false>
 class TSccVisitor {
 public:
@@ -209,7 +209,7 @@ public:
   TSccVisitor(const PGraph& _Graph) :
       Graph(_Graph), TmRtH(Graph->GetNodes()), Stack(Graph->GetNodes()) { }
   void DiscoverNode(int NId) {
-    Time++; TmRtH.AddDat(NId, TIntPr(-Time, NId)); // negative time -- node not yet in any SCC
+    Time++; TmRtH.AddDat(NId, TIntPr(-Time, NId));
     Stack.Push(NId); }
   void FinishNode(const int& NId) {
     typename PGraph::TObj::TNodeI NI = Graph->GetNI(NId);
@@ -218,13 +218,13 @@ public:
     for (int i = 0; i < NI.GetOutDeg(); i++) {
       W = NI.GetOutNId(i);
       const TIntPr& TmRtW = TmRtH.GetDat(W);
-      if (TmRtW.Val1 < 0) { // node not yet in any SCC
+      if (TmRtW.Val1 < 0) {
         TmRtN.Val2 = GetMinDiscTm(TmRtN.Val2, TmRtW.Val2); } }
     if (TmRtN.Val2 == NId) {
       if (! OnlyCount) { CnComV.Add(); }
       do { W = Stack.Top();  Stack.Pop();
       if (OnlyCount) { Cnt++; } else { CnComV.Last().Add(W); }
-      TmRtH.GetDat(W).Val1 = abs(TmRtH.GetDat(W).Val1); // node is in SCC
+      TmRtH.GetDat(W).Val1 = abs(TmRtH.GetDat(W).Val1);
       } while (W != NId);
       if (OnlyCount) { SccCntH.AddDat(Cnt) += 1; } } }
   void ExamineEdge(const int& NId1, const int& NId2) { }
@@ -235,8 +235,8 @@ public:
     return abs(TmRtH.GetDat(NId1).Val1) < abs(TmRtH.GetDat(NId2).Val1) ? NId1 : NId2; }
 };
 
-//#//////////////////////////////////////////////
-// Implementation
+
+
 namespace TSnap {
 
 template <class PGraph> 
@@ -280,7 +280,7 @@ bool IsWeaklyConn(const PGraph& Graph) {
   THashSet<TInt> VisitedNId(Graph->GetNodes());
   TSnapQueue<int> NIdQ(Graph->GetNodes()+1);
   typename PGraph::TObj::TNodeI NI;
-  // the rest of the nodes
+
   NIdQ.Push(Graph->BegNI().GetId());
   while (! NIdQ.Empty()) {
     const typename PGraph::TObj::TNodeI Node = Graph->GetNI(NIdQ.Top());  NIdQ.Pop();
@@ -306,12 +306,12 @@ void GetWccSzCnt(const PGraph& Graph, TIntPrV& WccSzCnt) {
   TSnapQueue<int> NIdQ(Graph->GetNodes()+1);
   typename PGraph::TObj::TNodeI NI;
   int Cnt = 0;
-  // zero degree nodes
+
   for (NI = Graph->BegNI(); NI < Graph->EndNI(); NI++) {
     if (NI.GetDeg() == 0) { Cnt++;  VisitedNId.AddKey(NI.GetId()); }
   }
   if (Cnt > 0) SzToCntH.AddDat(1, Cnt);
-  // the rest of the nodes
+
   for (NI = Graph->BegNI(); NI < Graph->EndNI(); NI++) {
     if (! VisitedNId.IsKey(NI.GetId())) {
       VisitedNId.AddKey(NI.GetId());
@@ -345,7 +345,7 @@ void GetWccs(const PGraph& Graph, TCnComV& CnComV) {
   TSnapQueue<int> NIdQ(Graph->GetNodes()+1);
   TIntV CcNIdV;
   CnComV.Clr();  CcNIdV.Gen(1);
-  // zero degree nodes
+
   for (NI = Graph->BegNI(); NI < Graph->EndNI(); NI++) {
     if (NI.GetDeg() == 0) {
       const int NId = NI.GetId();
@@ -353,7 +353,7 @@ void GetWccs(const PGraph& Graph, TCnComV& CnComV) {
       CcNIdV[0] = NId;  CnComV.Add(CcNIdV);
     }
   }
-  // the rest of the nodes
+
   for (NI = Graph->BegNI(); NI < Graph->EndNI(); NI++) {
     const int NId = NI.GetId();
     if (! VisitedNId.IsKey(NId)) {
@@ -376,7 +376,7 @@ void GetWccs(const PGraph& Graph, TCnComV& CnComV) {
         }
       }
       CcNIdV.Sort(true);
-      CnComV.Add(TCnCom(CcNIdV)); // add wcc comoponent
+      CnComV.Add(TCnCom(CcNIdV));
     }
   }
   CnComV.Sort(false);
@@ -465,4 +465,4 @@ PGraph GetMxBiCon(const PGraph& Graph) {
   }
 }
 
-} // namespace TSnap
+}

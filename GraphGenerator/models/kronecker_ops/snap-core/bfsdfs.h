@@ -1,58 +1,17 @@
 namespace TSnap {
-
-/////////////////////////////////////////////////
-// BFS and DFS
-/// Returns a directed Breadth-First-Search tree rooted at StartNId. ##GetBfsTree1
 template <class PGraph> PNGraph GetBfsTree(const PGraph& Graph, const int& StartNId, const bool& FollowOut, const bool& FollowIn);
-/// Returns the BFS tree size (number of nodes) and depth (number of levels) by following in-links (parameter FollowIn = true) and/or out-links (parameter FollowOut = true) of node StartNId.
 template <class PGraph> int GetSubTreeSz(const PGraph& Graph, const int& StartNId, const bool& FollowOut, const bool& FollowIn, int& TreeSzX, int& TreeDepthX);
-/// Finds IDs of all nodes that are at distance Hop from node StartNId. ##GetSubTreeSz
 template <class PGraph> int GetNodesAtHop(const PGraph& Graph, const int& StartNId, const int& Hop, TIntV& NIdV, const bool& IsDir=false);
-/// Returns the number of nodes at each hop distance from the starting node StartNId. ##GetNodesAtHops
 template <class PGraph> int GetNodesAtHops(const PGraph& Graph, const int& StartNId, TIntPrV& HopCntV, const bool& IsDir=false);
-
-/////////////////////////////////////////////////
-// Shortest paths
-/// Returns the length of the shortest path from node SrcNId to node DstNId. ##GetShortPath1
 template <class PGraph> int GetShortPath(const PGraph& Graph, const int& SrcNId, const int& DstNId, const bool& IsDir=false);
-/// Returns the length of the shortest path from node SrcNId to all other nodes in the network. ##GetShortPath2
 template <class PGraph> int GetShortPath(const PGraph& Graph, const int& SrcNId, TIntH& NIdToDistH, const bool& IsDir=false, const int& MaxDist=TInt::Mx);
-
-/////////////////////////////////////////////////
-// Diameter
-
-/// Returns the (approximation of the) Diameter (maximum shortest path length) of a graph (by performing BFS from NTestNodes random starting nodes). ##GetBfsFullDiam
 template <class PGraph> int GetBfsFullDiam(const PGraph& Graph, const int& NTestNodes, const bool& IsDir=false);
-/// Returns the (approximation of the) Effective Diameter (90-th percentile of the distribution of shortest path lengths) of a graph (by performing BFS from NTestNodes random starting nodes). ##GetBfsEffDiam1
 template <class PGraph> double GetBfsEffDiam(const PGraph& Graph, const int& NTestNodes, const bool& IsDir=false);
-/// Returns the (approximation of the) Effective Diameter and the Diameter of a graph (by performing BFS from NTestNodes random starting nodes). ##GetBfsEffDiam2
 template <class PGraph> double GetBfsEffDiam(const PGraph& Graph, const int& NTestNodes, const bool& IsDir, double& EffDiamX, int& FullDiamX);
-/// Returns the (approximation of the) Effective Diameter, the Diameter and the Average Shortest Path length in a graph (by performing BFS from NTestNodes random starting nodes). ##GetBfsEffDiam3
 template <class PGraph> double GetBfsEffDiam(const PGraph& Graph, const int& NTestNodes, const bool& IsDir, double& EffDiamX, int& FullDiamX, double& AvgSPLX);
-/// Returns the (approximation of the) Effective Diameter, the Diameter and the Average Shortest Path length in a graph (by performing BFS from NTestNodes random starting nodes). ##GetBfsEffDiamAll
 template <class PGraph> double GetBfsEffDiamAll(const PGraph& Graph, const int& NTestNodes, const bool& IsDir, double& EffDiamX, int& FullDiamX, double& AvgSPLX);
-/// Use the whole graph (all edges) to measure the shortest path lengths but only report the path lengths between nodes in the SubGraphNIdV. ##GetBfsEffDiam4
 template <class PGraph> double GetBfsEffDiam(const PGraph& Graph, const int& NTestNodes, const TIntV& SubGraphNIdV, const bool& IsDir, double& EffDiamX, int& FullDiamX);
-
-//
-//template <class PGraph> int GetRangeDist(const PGraph& Graph, const int& SrcNId, const int& DstNId, const bool& IsDir=false);
-//template <class PGraph> int GetShortPath(const PGraph& Graph, const int& SrcNId, TIntH& NIdToDistH, const bool& IsDir=false, const int& MaxDist=1000);
-//template <class PGraph> int GetShortPath(const PGraph& Graph, const int& SrcNId, const TIntSet& TargetSet, const bool& IsDir, TIntV& PathNIdV);
-//template <class PGraph> int GetShortPath(TIntH& NIdPrnH, TCcQueue<int>& NIdQ, const PGraph& Graph, const int& SrcNId, const TIntSet& TargetSet, const bool& IsDir, TIntV& PathNIdV);
-//template <class PGraph> int GetMxShortDist(const PGraph& Graph, const int& SrcNId, const bool& IsDir=false);
-//template <class PGraph> int GetMxShortDist(const PGraph& Graph, const int& SrcNId, const bool& IsDir, int& MxDistNId);
-//template <class PGraph> int GetMxShortDist(const PGraph& Graph, const int& SrcNId, const bool& IsDir, int& MxDistNId, TCcQueue<int>& NIdQ, TCcQueue<int>& DistQ, TIntSet& VisitedH);
-//template <class PGraph> int GetMxGreedyDist(const PGraph& Graph, const int& SrcNId, const bool& IsDir=false);
-//template <class PGraph> int GetMxGreedyDist(const PGraph& Graph, const int& SrcNId, const bool& IsDir, TCcQueue<int>& NIdQ, TCcQueue<int>& DistQ, TIntSet& VisitedH);
-//template <class PGraph> PNGraph GetShortPathsSubGraph(const PGraph& Graph, const TIntV& SubGraphNIdV);
-//template <class PGraph> PGraph GetWccPathsSubGraph(const PGraph& Graph, const TIntV& NIdV);
-//template <class PGraph> void GetSubTreeSz(const PGraph& Graph, const int& StartNId, const bool& FollowOutEdges, int& TreeSz, int& TreeDepth);
-
-} // namespace TSnap
-
-//#//////////////////////////////////////////////
-/// Breath-First-Search class.
-/// The class is meant for executing many BFSs over a fixed graph. This means that the class can keep the hash tables and queues initialized between different calls of the DoBfs() function.
+}
 template<class PGraph>
 class TBreathFS {
 public:
@@ -63,33 +22,30 @@ public:
 public:
   TBreathFS(const PGraph& GraphPt, const bool& InitBigQ=true) :
     Graph(GraphPt), Queue(InitBigQ?Graph->GetNodes():1024), NIdDistH(InitBigQ?Graph->GetNodes():1024) { }
-  /// Sets the graph to be used by the BFS to GraphPt and resets the data structures.
-  void SetGraph(const PGraph& GraphPt);
-  /// Performs BFS from node id StartNode for at maps MxDist steps by only following in-links (parameter FollowIn = true) and/or out-links (parameter FollowOut = true).
-  int DoBfs(const int& StartNode, const bool& FollowOut, const bool& FollowIn, const int& TargetNId=-1, const int& MxDist=TInt::Mx);
-  /// Same functionality as DoBfs with better performance.
-  int DoBfsHybrid(const int& StartNode, const bool& FollowOut, const bool& FollowIn, const int& TargetNId=-1, const int& MxDist=TInt::Mx);
-  /// Returns the number of nodes visited/reached by the BFS.
-  int GetNVisited() const { return NIdDistH.Len(); }
-  /// Returns the IDs of the nodes visited/reached by the BFS.
-  void GetVisitedNIdV(TIntV& NIdV) const { NIdDistH.GetKeyV(NIdV); }
-  /// Returns the shortst path distance between SrcNId and DistNId.
-  /// Note you have to first call DoBFs(). SrcNId must be equal to StartNode, otherwise return value is -1.
-  int GetHops(const int& SrcNId, const int& DstNId) const;
-  /// Returns a random shortest path from SrcNId to DstNId.
-  /// Note you have to first call DoBFs(). SrcNId must be equal to StartNode, otherwise return value is -1.
-  int GetRndPath(const int& SrcNId, const int& DstNId, TIntV& PathNIdV) const;
 
-/* Private variables and functions for DoBfsHybrid */
+  void SetGraph(const PGraph& GraphPt);
+
+  int DoBfs(const int& StartNode, const bool& FollowOut, const bool& FollowIn, const int& TargetNId=-1, const int& MxDist=TInt::Mx);
+
+  int DoBfsHybrid(const int& StartNode, const bool& FollowOut, const bool& FollowIn, const int& TargetNId=-1, const int& MxDist=TInt::Mx);
+
+  int GetNVisited() const { return NIdDistH.Len(); }
+
+  void GetVisitedNIdV(TIntV& NIdV) const { NIdDistH.GetKeyV(NIdV); }
+
+
+  int GetHops(const int& SrcNId, const int& DstNId) const;
+
+
+  int GetRndPath(const int& SrcNId, const int& DstNId, TIntV& PathNIdV) const;
 private:
-  int Stage; // 0, 2: top down, 1: bottom up
+  int Stage;
   static const unsigned int alpha = 100;
   static const unsigned int beta = 20;
-  /* Private functions */
+
   bool TopDownStep(TIntV &NIdDistV, TIntV *Frontier, TIntV *NextFrontier, int& MaxDist, const int& TargetNId, const bool& FollowOut, const bool& FollowIn);
   bool BottomUpStep(TIntV &NIdDistV, TIntV *Frontier, TIntV *NextFrontier, int& MaxDist, const int& TargetNId, const bool& FollowOut, const bool& FollowIn);
 };
-
 template<class PGraph>
 void TBreathFS<PGraph>::SetGraph(const PGraph& GraphPt) {
   Graph=GraphPt;
@@ -97,23 +53,20 @@ void TBreathFS<PGraph>::SetGraph(const PGraph& GraphPt) {
   if (Queue.Reserved() < N) { Queue.Gen(N); }
   if (NIdDistH.GetReservedKeyIds() < N) { NIdDistH.Gen(N); }
 }
-
 template<class PGraph>
 int TBreathFS<PGraph>::DoBfs(const int& StartNode, const bool& FollowOut, const bool& FollowIn, const int& TargetNId, const int& MxDist) {
   StartNId = StartNode;
   IAssert(Graph->IsNode(StartNId));
-//  const typename PGraph::TObj::TNodeI StartNodeI = Graph->GetNI(StartNode);
-//  IAssertR(StartNodeI.GetOutDeg() > 0, TStr::Fmt("No neighbors from start node %d.", StartNode));
   NIdDistH.Clr(false);  NIdDistH.AddDat(StartNId, 0);
   Queue.Clr(false);  Queue.Push(StartNId);
   int v, MaxDist = 0;
   while (! Queue.Empty()) {
     const int NId = Queue.Top();  Queue.Pop();
     const int Dist = NIdDistH.GetDat(NId);
-    if (Dist == MxDist) { break; } // max distance limit reached
+    if (Dist == MxDist) { break; }
     const typename PGraph::TObj::TNodeI NodeI = Graph->GetNI(NId);
-    if (FollowOut) { // out-links
-      for (v = 0; v < NodeI.GetOutDeg(); v++) {  // out-links
+    if (FollowOut) {
+      for (v = 0; v < NodeI.GetOutDeg(); v++) {
         const int DstNId = NodeI.GetOutNId(v);
         if (! NIdDistH.IsKey(DstNId)) {
           NIdDistH.AddDat(DstNId, Dist+1);
@@ -123,7 +76,7 @@ int TBreathFS<PGraph>::DoBfs(const int& StartNode, const bool& FollowOut, const 
         }
       }
     }
-    if (FollowIn) { // in-links
+    if (FollowIn) {
       for (v = 0; v < NodeI.GetInDeg(); v++) {
         const int DstNId = NodeI.GetInNId(v);
         if (! NIdDistH.IsKey(DstNId)) {
@@ -137,7 +90,6 @@ int TBreathFS<PGraph>::DoBfs(const int& StartNode, const bool& FollowOut, const 
   }
   return MaxDist;
 }
-
 template<class PGraph>
 int TBreathFS<PGraph>::DoBfsHybrid(const int& StartNode, const bool& FollowOut, const bool& FollowIn, const int& TargetNId, const int& MxDist) {
   StartNId = StartNode;
@@ -145,14 +97,12 @@ int TBreathFS<PGraph>::DoBfsHybrid(const int& StartNode, const bool& FollowOut, 
   if (TargetNId == StartNode) return 0;
   const typename PGraph::TObj::TNodeI StartNodeI = Graph->GetNI(StartNode);
 
-  // Initialize vector
   TIntV NIdDistV(Graph->GetMxNId() + 1);
   for (int i = 0; i < NIdDistV.Len(); i++) {
     NIdDistV.SetVal(i, -1);
   }
   TIntV *Frontier = new TIntV(Graph->GetNodes(), 0);
   TIntV *NextFrontier = new TIntV(Graph->GetNodes(), 0);
-
   NIdDistV.SetVal(StartNId, 0);
   Frontier->Add(StartNId);
   Stage = 0;
@@ -162,8 +112,7 @@ int TBreathFS<PGraph>::DoBfsHybrid(const int& StartNode, const bool& FollowOut, 
   while (! Frontier->Empty()) {
     MaxDist += 1;
     NextFrontier->Clr(false);
-    if (MaxDist == MxDist) { break; } // max distance limit reached
-
+    if (MaxDist == MxDist) { break; }
     UnvisitedNodes -= Frontier->Len();
     if (Stage == 0 && UnvisitedNodes / Frontier->Len() < alpha) {
       Stage = 1;
@@ -171,7 +120,6 @@ int TBreathFS<PGraph>::DoBfsHybrid(const int& StartNode, const bool& FollowOut, 
       Stage = 2;
     }
 
-    // Top down or bottom up depending on stage
     bool targetFound = false;
     if (Stage == 0 || Stage == 2) {
       targetFound = TopDownStep(NIdDistV, Frontier, NextFrontier, MaxDist, TargetNId, FollowOut, FollowIn);
@@ -183,15 +131,13 @@ int TBreathFS<PGraph>::DoBfsHybrid(const int& StartNode, const bool& FollowOut, 
       break;
     }
 
-    // swap Frontier and NextFrontier
     TIntV *temp = Frontier;
     Frontier = NextFrontier;
     NextFrontier = temp;
   }
-
   delete Frontier;
   delete NextFrontier;
-  // Transform vector to hash table
+
   NIdDistH.Clr(false);
   for (int NId = 0; NId < NIdDistV.Len(); NId++) {
     if (NIdDistV[NId] != -1) {
@@ -200,13 +146,12 @@ int TBreathFS<PGraph>::DoBfsHybrid(const int& StartNode, const bool& FollowOut, 
   }
   return MaxDist;
 }
-
 template<class PGraph>
 bool TBreathFS<PGraph>::TopDownStep(TIntV &NIdDistV, TIntV *Frontier, TIntV *NextFrontier, int& MaxDist, const int& TargetNId, const bool& FollowOut, const bool& FollowIn) {
-  for (TIntV::TIter it = Frontier->BegI(); it != Frontier->EndI(); ++it) { // loop over frontier
+  for (TIntV::TIter it = Frontier->BegI(); it != Frontier->EndI(); ++it) {
     const int NId = *it;
     const int Dist = NIdDistV[NId];
-    IAssert(Dist == MaxDist); // Must equal to MaxDist
+    IAssert(Dist == MaxDist);
     const typename PGraph::TObj::TNodeI NodeI = Graph->GetNI(NId);
     if (FollowOut) {
       for (int v = 0; v < NodeI.GetOutDeg(); v++) {
@@ -231,7 +176,6 @@ bool TBreathFS<PGraph>::TopDownStep(TIntV &NIdDistV, TIntV *Frontier, TIntV *Nex
   }
   return false;
 }
-
 template<class PGraph>
 bool TBreathFS<PGraph>::BottomUpStep(TIntV &NIdDistV, TIntV *Frontier, TIntV *NextFrontier, int& MaxDist, const int& TargetNId, const bool& FollowOut, const bool& FollowIn) {
   for (typename PGraph::TObj::TNodeI NodeI = Graph->BegNI(); NodeI < Graph->EndNI(); NodeI++) {
@@ -263,7 +207,6 @@ bool TBreathFS<PGraph>::BottomUpStep(TIntV &NIdDistV, TIntV *Frontier, TIntV *Ne
   }
   return false;
 }
-
 template<class PGraph>
 int TBreathFS<PGraph>::GetHops(const int& SrcNId, const int& DstNId) const {
   TInt Dist;
@@ -271,7 +214,6 @@ int TBreathFS<PGraph>::GetHops(const int& SrcNId, const int& DstNId) const {
   if (! NIdDistH.IsKeyGetDat(DstNId, Dist)) { return -1; }
   return Dist.Val;
 }
-
 template<class PGraph>
 int TBreathFS<PGraph>::GetRndPath(const int& SrcNId, const int& DstNId, TIntV& PathNIdV) const {
   PathNIdV.Clr(false);
@@ -297,11 +239,7 @@ int TBreathFS<PGraph>::GetRndPath(const int& SrcNId, const int& DstNId, TIntV& P
   PathNIdV.Reverse();
   return PathNIdV.Len()-1;
 }
-
-/////////////////////////////////////////////////
-// Implementation
 namespace TSnap {
-
 template <class PGraph>
 PNGraph GetBfsTree(const PGraph& Graph, const int& StartNId, const bool& FollowOut, const bool& FollowIn) {
   TBreathFS<PGraph> BFS(Graph);
@@ -332,7 +270,6 @@ PNGraph GetBfsTree(const PGraph& Graph, const int& StartNId, const bool& FollowO
   }
   return Tree;
 }
-
 template <class PGraph>
 int GetSubTreeSz(const PGraph& Graph, const int& StartNId, const bool& FollowOut, const bool& FollowIn, int& TreeSz, int& TreeDepth) {
   TBreathFS<PGraph> BFS(Graph);
@@ -344,7 +281,6 @@ int GetSubTreeSz(const PGraph& Graph, const int& StartNId, const bool& FollowOut
   }
   return TreeSz;
 }
-
 template <class PGraph>
 int GetNodesAtHop(const PGraph& Graph, const int& StartNId, const int& Hop, TIntV& NIdV, const bool& IsDir) {
   TBreathFS<PGraph> BFS(Graph);
@@ -356,7 +292,6 @@ int GetNodesAtHop(const PGraph& Graph, const int& StartNId, const int& Hop, TInt
   }
   return NIdV.Len();
 }
-
 template <class PGraph>
 int GetNodesAtHops(const PGraph& Graph, const int& StartNId, TIntPrV& HopCntV, const bool& IsDir) {
   TBreathFS<PGraph> BFS(Graph);
@@ -369,7 +304,6 @@ int GetNodesAtHops(const PGraph& Graph, const int& StartNId, TIntPrV& HopCntV, c
   HopCntV.Sort();
   return HopCntV.Len();
 }
-
 template <class PGraph>
 int GetShortPath(const PGraph& Graph, const int& SrcNId, TIntH& NIdToDistH, const bool& IsDir, const int& MaxDist) {
   TBreathFS<PGraph> BFS(Graph);
@@ -378,14 +312,12 @@ int GetShortPath(const PGraph& Graph, const int& SrcNId, TIntH& NIdToDistH, cons
   NIdToDistH.Swap(BFS.NIdDistH);
   return NIdToDistH[NIdToDistH.Len()-1];
 }
-
 template <class PGraph>
 int GetShortPath(const PGraph& Graph, const int& SrcNId, const int& DstNId, const bool& IsDir) {
   TBreathFS<PGraph> BFS(Graph);
   BFS.DoBfs(SrcNId, true, ! IsDir, DstNId, TInt::Mx);
   return BFS.GetHops(SrcNId, DstNId);
 }
-
 template <class PGraph>
 int GetBfsFullDiam(const PGraph& Graph, const int& NTestNodes, const bool& IsDir) {
   int FullDiam;
@@ -393,7 +325,6 @@ int GetBfsFullDiam(const PGraph& Graph, const int& NTestNodes, const bool& IsDir
   GetBfsEffDiam(Graph, NTestNodes, IsDir, EffDiam, FullDiam);
   return FullDiam;
 }
-
 template <class PGraph>
 double GetBfsEffDiam(const PGraph& Graph, const int& NTestNodes, const bool& IsDir) {
   int FullDiam;
@@ -401,20 +332,18 @@ double GetBfsEffDiam(const PGraph& Graph, const int& NTestNodes, const bool& IsD
   GetBfsEffDiam(Graph, NTestNodes, IsDir, EffDiam, FullDiam);
   return EffDiam;
 }
-
 template <class PGraph>
 double GetBfsEffDiam(const PGraph& Graph, const int& NTestNodes, const bool& IsDir, double& EffDiam, int& FullDiam) {
   double AvgDiam;
   EffDiam = -1;  FullDiam = -1;
   return GetBfsEffDiam(Graph, NTestNodes, IsDir, EffDiam, FullDiam, AvgDiam);
 }
-
 template <class PGraph>
 double GetBfsEffDiam(const PGraph& Graph, const int& NTestNodes, const bool& IsDir, double& EffDiam, int& FullDiam, double& AvgSPL) {
   EffDiam = -1;  FullDiam = -1;  AvgSPL = -1;
   TIntFltH DistToCntH;
   TBreathFS<PGraph> BFS(Graph);
-  // shotest paths
+
   TIntV NodeIdV;
   Graph->GetNIdV(NodeIdV);  NodeIdV.Shuffle(TInt::Rnd);
   for (int tries = 0; tries < TMath::Mn(NTestNodes, Graph->GetNodes()); tries++) {
@@ -431,25 +360,22 @@ double GetBfsEffDiam(const PGraph& Graph, const int& NTestNodes, const bool& IsD
     PathCnt += DistToCntH[i];
   }
   DistNbrsPdfV.Sort();
-  EffDiam = TSnap::TSnapDetail::CalcEffDiamPdf(DistNbrsPdfV, 0.9); // effective diameter (90-th percentile)
-  FullDiam = DistNbrsPdfV.Last().Key;                // approximate full diameter (max shortest path length over the sampled nodes)
-  AvgSPL = SumPathL/PathCnt;                        // average shortest path length
+  EffDiam = TSnap::TSnapDetail::CalcEffDiamPdf(DistNbrsPdfV, 0.9);
+  FullDiam = DistNbrsPdfV.Last().Key;
+  AvgSPL = SumPathL/PathCnt;
   return EffDiam;
 }
-
 template <class PGraph>
 double GetBfsEffDiamAll(const PGraph& Graph, const int& NTestNodes, const bool& IsDir, double& EffDiam, int& FullDiam, double& AvgSPL) {
   return GetBfsEffDiam(Graph, NTestNodes, IsDir, EffDiam, FullDiam, AvgSPL);
 }
-
 template <class PGraph>
 double GetBfsEffDiam(const PGraph& Graph, const int& NTestNodes, const TIntV& SubGraphNIdV, const bool& IsDir, double& EffDiam, int& FullDiam) {
   EffDiam = -1;
   FullDiam = -1;
-
   TIntFltH DistToCntH;
   TBreathFS<PGraph> BFS(Graph);
-  // shotest paths
+
   TIntV NodeIdV(SubGraphNIdV);  NodeIdV.Shuffle(TInt::Rnd);
   TInt Dist;
   for (int tries = 0; tries < TMath::Mn(NTestNodes, SubGraphNIdV.Len()); tries++) {
@@ -466,33 +392,30 @@ double GetBfsEffDiam(const PGraph& Graph, const int& NTestNodes, const TIntV& Su
     DistNbrsPdfV.Add(TIntFltKd(DistToCntH.GetKey(i), DistToCntH[i]));
   }
   DistNbrsPdfV.Sort();
-  EffDiam = TSnap::TSnapDetail::CalcEffDiamPdf(DistNbrsPdfV, 0.9);  // effective diameter (90-th percentile)
-  FullDiam = DistNbrsPdfV.Last().Key;                 // approximate full diameter (max shortest path length over the sampled nodes)
-  return EffDiam;                                     // average shortest path length
+  EffDiam = TSnap::TSnapDetail::CalcEffDiamPdf(DistNbrsPdfV, 0.9);
+  FullDiam = DistNbrsPdfV.Last().Key;
+  return EffDiam;
 }
-
 template <class PGraph>
 int GetShortestDistances(const PGraph& Graph, const int& StartNId, const bool& FollowOut, const bool& FollowIn, TIntV& ShortestDists) {
   PSOut StdOut = TStdOut::New();
   int MxNId = Graph->GetMxNId();
-  int NonNodeDepth = 2147483647; // INT_MAX
-  int InfDepth = 2147483646; // INT_MAX - 1
+  int NonNodeDepth = 2147483647;
+  int InfDepth = 2147483646;
   ShortestDists.Gen(MxNId);
   for (int NId = 0; NId < MxNId; NId++) {
     if (Graph->IsNode(NId)) { ShortestDists[NId] = InfDepth; }
     else { ShortestDists[NId] = NonNodeDepth; }
   }
-
-  TIntV Vec1(MxNId, 0); // ensure enough capacity
-  TIntV Vec2(MxNId, 0); // ensure enough capacity
-
+  TIntV Vec1(MxNId, 0);
+  TIntV Vec2(MxNId, 0);
   ShortestDists[StartNId] = 0;
   TIntV* PCurV = &Vec1;
   PCurV->Add(StartNId);
   TIntV* PNextV = &Vec2;
-  int Depth = 0; // current depth
+  int Depth = 0;
   while (!PCurV->Empty()) {
-    Depth++; // increase depth
+    Depth++;
     for (int i = 0; i < PCurV->Len(); i++) {
       int NId = PCurV->GetVal(i);
       typename PGraph::TObj::TNodeI NI = Graph->GetNI(NId);
@@ -504,40 +427,36 @@ int GetShortestDistances(const PGraph& Graph, const int& StartNId, const bool& F
         }
       }
     }
-    // swap pointer, no copying
+
     TIntV* Tmp = PCurV;
     PCurV = PNextV;
     PNextV = Tmp;
-    // clear next
-    PNextV->Reduce(0); // reduce length, does not initialize new array
+
+    PNextV->Reduce(0);
   }
   return Depth-1;
 }
-
 #ifdef USE_OPENMP
 template <class PGraph>
 int GetShortestDistancesMP2(const PGraph& Graph, const int& StartNId, const bool& FollowOut, const bool& FollowIn, TIntV& ShortestDists) {
   int MxNId = Graph->GetMxNId();
-  int NonNodeDepth = 2147483647; // INT_MAX
-  int InfDepth = 2147483646; // INT_MAX - 1
+  int NonNodeDepth = 2147483647;
+  int InfDepth = 2147483646;
   ShortestDists.Gen(MxNId);
   #pragma omp parallel for schedule(dynamic,10000)
   for (int NId = 0; NId < MxNId; NId++) {
     if (Graph->IsNode(NId)) { ShortestDists[NId] = InfDepth; }
     else { ShortestDists[NId] = NonNodeDepth; }
   }
-
-  TIntV Vec1(MxNId, 0); // ensure enough capacity
-  TIntV Vec2(MxNId, 0); // ensure enough capacity
-
+  TIntV Vec1(MxNId, 0);
+  TIntV Vec2(MxNId, 0);
   ShortestDists[StartNId] = 0;
   TIntV* PCurV = &Vec1;
   PCurV->Add(StartNId);
   TIntV* PNextV = &Vec2;
-  int Depth = 0; // current depth
-
+  int Depth = 0;
   while (!PCurV->Empty()) {
-    Depth++; // increase depth
+    Depth++;
     #pragma omp parallel for schedule(dynamic,10000)
     for (int i = 0; i < PCurV->Len(); i++) {
       int NId = PCurV->GetVal(i);
@@ -549,29 +468,13 @@ int GetShortestDistancesMP2(const PGraph& Graph, const int& StartNId, const bool
         }
       }
     }
-//      #pragma omp parallel for schedule(dynamic,10000)
-//      for (int NId = 0; NId < MxNId; NId++) {
-//        if (ShortestDists[NId] == InfDepth) {
-//          typename PGraph::TObj::TNodeI NI = Graph->GetNI(NId);
-//          for (int e = 0; e < NI.GetInDeg(); e++) {
-//            const int InNId = NI.GetInNId(e);
-//            if (ShortestDists[InNId] < Depth) {
-//              ShortestDists[NId] = Depth;
-//              PNextV->AddMP(NId);
-//              break;
-//            }
-//          }
-//        }
-//      }
-    // swap pointer, no copying
     TIntV* Tmp = PCurV;
     PCurV = PNextV;
     PNextV = Tmp;
-    // clear next
-    PNextV->Reduce(0); // reduce length, does not initialize new array
+
+    PNextV->Reduce(0);
   }
   return Depth-1;
 }
-#endif // USE_OPENMP
-
-} // namespace TSnap
+#endif
+}
