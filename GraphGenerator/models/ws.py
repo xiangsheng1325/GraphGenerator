@@ -97,7 +97,7 @@ def generate_new_graph(parameters, generator, repeat=1):
     graph_list = []
     for i in range(repeat):
         if generator == 'W-S':
-            graph_list.append(nx.watts_strogatz_graph(*parameters))
+            graph_list.append(watts_strogatz_graph(*parameters))
     return graph_list
 
 
