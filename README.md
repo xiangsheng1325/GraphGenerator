@@ -3,13 +3,16 @@
 [![Contributor](https://img.shields.io/github/contributors/xiangsheng1325/GraphGenerator?style=plastic&color=blue)](https://github.com/xiangsheng1325/GraphGenerator/graphs/contributors)
 [![Activity](https://img.shields.io/github/commit-activity/m/xiangsheng1325/GraphGenerator?style=plastic)](https://github.com/xiangsheng1325/GraphGenerator/pulse)
 
-Toolkit for generating graphs and evaluating graph generators.
+Toolkit for simulating observed graphs, generating new graphs and evaluating graph generators.
 
 ## Installation
 ### Environments
 [![Python](https://img.shields.io/badge/Python-v3.6.8-blue?style=plastic)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-v1.8.0-green?style=plastic)](https://pypi.org/project/torch/)
 [![Tensorflow](https://img.shields.io/badge/Tensorflow-v2.4.0-blue?style=plastic)](https://pypi.org/project/tensorflow/)
+
+If users want to use some deep learning based graph generators, deep learning dependencies are required such as Pytorch or Tensorflow.
+We prefer to use PyTorch as dependency.
 
 **1. Install Pytorch**
 ```bash
@@ -23,6 +26,8 @@ pip install -r requirements.txt
 pip install -e .
 ```
 ### Dependencies
+Users need to install specific dependencies to support some graph generators, which is listed here:
+
 |Graph Generator|Dependencies|Graph Generator|Dependencies|
 |--|--|--|--|
 |ARVGA|Tensorflow|GraphRNN|Pytorch|
@@ -34,7 +39,7 @@ pip install -e .
 
 
 ### Project organization
-
+This project is modularized to benefit further contributions on it.
 Please organize this project according to following structure:
 
 ```
@@ -70,6 +75,7 @@ GraphGenerator/
 ```
 
 ## GraphGenerator Usage
+Here are some examples of using this toolkit.
 
 **1. Preprocess data**
 
