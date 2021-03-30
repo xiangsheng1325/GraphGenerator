@@ -1,0 +1,9 @@
+---
+exp_name: BTER
+exp_dir: exp/BTER
+seed: 1234
+dataset:
+  name: top10
+  data_path: data/
+model:
+  name: BTER
