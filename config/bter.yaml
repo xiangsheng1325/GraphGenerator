@@ -7,3 +7,4 @@ dataset:
   data_path: data/
 model:
   name: BTER
+num_gen: 10

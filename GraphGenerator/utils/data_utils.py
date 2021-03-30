@@ -1556,9 +1556,10 @@ def create(args):
 
 def load_matlab_graph(fname):
     tmp_data = sio.loadmat(fname)
-    return tmp_data['G'], tmp_data['graphname']
+    #print(tmp_data)
+    return tmp_data['G_bter']
 
 
-def save_matlab_graph(dump_fname, G, graphname):
-    dump_data = {'G': G, 'graphname': graphname}
+def save_matlab_graph(dump_fname, sp_adj, graphname):
+    dump_data = {'G': sp_adj, 'graphname': graphname}
     sio.savemat(dump_fname, dump_data)

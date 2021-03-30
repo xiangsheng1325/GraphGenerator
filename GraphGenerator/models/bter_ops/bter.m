@@ -23,7 +23,7 @@ function [e1,e2,info] = bter(nd,cd,varargin)
 %
 %   References:
 %   * C. Seshadhri, T. G. Kolda and A. Pinar. Community structure and
-%     scale-free collections of Erdös-Rényi graphs, Physical Review E
+%     scale-free collections of Erdï¿½s-Rï¿½nyi graphs, Physical Review E
 %     85(5):056109, May 2012. (doi:10.1103/PhysRevE.85.056109)
 %   * T. G. Kolda, A. Pinar, T. Plantenga and C. Seshadhri. A Scalable
 %     Generative Graph Model with Community Structure,  arXiv:1302.6636,
@@ -346,12 +346,15 @@ for d = 2:dmax
         ig(g) = id(d) + ndfill(d);
         bg(g) = ceil(ndbulktmp / (d+1));
         ng(g) = d+1;
-        if (bg(g) * (d+1)) > (ndprime(d) + ndbulktmp)
-            if bg(g) ~= 1
-                error('Last group has more than 1 block');
-            end
-            ng(g) = ndprime(d) + ndbulktmp;
-        end
+        %fprintf("ng(g):%d\n", ng(g));
+        %if (bg(g) * (d+1)) > (ndprime(d) + ndbulktmp)
+        %    if bg(g) ~= 1
+        %        error('Last group has more than 1 block');
+        %    end
+        %    ng(g) = ndprime(d) + ndbulktmp;
+        %    fprintf("ndprime(d):%d\n", ndprime(d));
+        %    fprintf("ng(g):%d\n", ng(g));
+        %end
         rho = nthroot(cd(d), 3);
         intdeg = (ng(g) - 1) * rho;
         wdbulktmp = 0.5 * ndbulktmp * (d - intdeg);        
@@ -361,6 +364,7 @@ for d = 2:dmax
 % The fix is make the oversampling factor the min of the old value and log ng(g), the trivial coupon collector bound.
 
 % Change added, Jun 8 2018
+
         oversample = log (ng(g) * ng(g)-1) % start by setting largest possible oversampling factor, as given by coupon collector bound. We need more samples to get the right number of edges
         if (rho < 1) % since rho < 1, we can improve the coupon collector bound, oversampling factor will be smaller
             oversample = min(oversample, log(1/(1-rho))); % take the min of the new bound, with previous trivial bound

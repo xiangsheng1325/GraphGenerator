@@ -3,6 +3,7 @@ from GraphGenerator.utils.arg_utils import set_device
 import GraphGenerator.models.kronecker as kronecker
 import GraphGenerator.models.rmat as rmat
 import GraphGenerator.models.rtg as rtg
+import GraphGenerator.models.bter as bter
 import GraphGenerator.models.er as er
 import GraphGenerator.models.ws as ws
 import GraphGenerator.models.ba as ba
@@ -131,8 +132,9 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
         tmp_name = generator.lower()
         model_name = "{}.{}".format(tmp_name.replace('-', ''), tmp_name.replace('-', '_'))
         graphs = eval(model_name)(input_data, config)
-    elif generator in ['rtg']:
+    elif generator in ['rtg', 'RTG', 'bter', 'BTER']:
         model_name = "{}.{}".format(generator, generator)
+        graphs = eval(model_name)(input_data, config)
     elif generator in ['sbm', 'dcsbm']:
         graphs = sbm.generate(input_data, generator, repeat)
     elif generator in ['rmat', 'kronecker']:
