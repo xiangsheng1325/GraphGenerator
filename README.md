@@ -35,7 +35,7 @@ Users need to install specific dependencies to support some graph generators, wh
 |BTER|MATLAB|NetGAN|Tensorflow|
 |CondGEN|Pytorch|SBMGNN|Tensorflow|
 |GRAN|Pytorch|SGAE|Pytorch|
-|Graphite|Pytorch|VGAE|Pytorch|
+|Graphite|Pytorch/Tensorflow|VGAE|Pytorch|
 
 
 ### Project organization
