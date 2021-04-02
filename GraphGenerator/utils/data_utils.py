@@ -1642,4 +1642,4 @@ def mask_adj(adj):
     adj_train = adj_train + adj_train.T
 
     # NOTE: these edge lists only contain single direction of edge!
-    return adj_train, train_edges, val_edges, val_edges_false # , test_edges, test_edges_false
+    return adj_train, train_edges, val_edges, val_edges_false
