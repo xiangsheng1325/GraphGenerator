@@ -1,5 +1,0 @@
-#include "Snap.h"
-
-int main(){
-    return 0;
-}

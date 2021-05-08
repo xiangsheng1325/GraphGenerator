@@ -1,14 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="GraphGenerator_Only">
+  <component name="PublishConfigData" autoUpload="Always" serverName="default(kd07-ggen)">
     <serverData>
-      <paths name="Copy of project-level server 'kd07(KG)'">
-        <serverdata>
-          <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
-          </mappings>
-        </serverdata>
-      </paths>
       <paths name="GraphGenerator_Only">
         <serverdata>
           <mappings>
@@ -16,14 +9,14 @@
           </mappings>
         </serverdata>
       </paths>
-      <paths name="kd03">
+      <paths name="default(kd07-ggen)">
         <serverdata>
           <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="venv/ggen/graphgenerator" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
-      <paths name="kd03(none)">
+      <paths name="kd03-antifraud">
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />
@@ -37,38 +30,10 @@
           </mappings>
         </serverdata>
       </paths>
-      <paths name="kd07(fastgae)">
+      <paths name="kd07-ggen">
         <serverdata>
           <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
-          </mappings>
-        </serverdata>
-      </paths>
-      <paths name="kd07(ggen)">
-        <serverdata>
-          <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
-          </mappings>
-        </serverdata>
-      </paths>
-      <paths name="root@49.235.218.136:22">
-        <serverdata>
-          <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
-          </mappings>
-        </serverdata>
-      </paths>
-      <paths name="shengxiang@192.168.100.211:22">
-        <serverdata>
-          <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
-          </mappings>
-        </serverdata>
-      </paths>
-      <paths name="xiangsheng@192.168.100.205:22 (1)">
-        <serverdata>
-          <mappings>
-            <mapping deploy="/venv/ggen/graphgenerator" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="venv/ggen/graphgenerator" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>
