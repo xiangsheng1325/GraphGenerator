@@ -1,9 +1,9 @@
 ---
 exp_name: BiGG
 exp_dir: exp/BiGG
-#device: cuda:0
-device: cpu
-gpu: -1
+device: cuda:1
+#device: cpu
+gpu: 1
 seed: 1234
 dataset:
   name: top10

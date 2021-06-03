@@ -24,7 +24,8 @@ ifeq ($(USE_GPU), 1)
     LDFLAGS += -L$(CUDA_HOME)/lib64 -lcudart -lcublas -lcurand
 endif
 
-CUDA_ARCH := -gencode arch=compute_60,code=sm_60 -gencode arch=compute_70,code=sm_70
+CUDA_ARCH := -gencode arch=compute_86,code=sm_86
+# -gencode arch=compute_70,code=sm_70
 
 build_root = build
 
