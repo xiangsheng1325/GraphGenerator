@@ -1,16 +1,5 @@
 import scipy.sparse as sp
 from GraphGenerator.utils.arg_utils import set_device
-import GraphGenerator.models.kronecker as kronecker
-import GraphGenerator.models.rmat as rmat
-import GraphGenerator.models.rtg as rtg
-import GraphGenerator.models.bter as bter
-import GraphGenerator.models.er as er
-import GraphGenerator.models.ws as ws
-import GraphGenerator.models.ba as ba
-import GraphGenerator.models.sbm as sbm
-import GraphGenerator.models.vgae as vgae
-import GraphGenerator.models.graphite as graphite
-import GraphGenerator.models.bigg as bigg
 import networkx as nx
 import torch.optim as optim
 import torch.nn.functional as F
@@ -100,17 +89,27 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
     """
     # graphs = []
     if generator in ['e-r', 'w-s', 'b-a', 'E-R', 'W-S', 'B-A']:
+        import GraphGenerator.models.er as er
+        import GraphGenerator.models.ws as ws
+        import GraphGenerator.models.ba as ba
         tmp_name = generator.lower()
         model_name = "{}.{}".format(tmp_name.replace('-', ''), tmp_name.replace('-', '_'))
         graphs = eval(model_name)(input_data, config)
     elif generator in ['rtg', 'RTG', 'bter', 'BTER']:
+        import GraphGenerator.models.rtg as rtg
+        import GraphGenerator.models.bter as bter
         model_name = "{}.{}".format(generator, generator)
         graphs = eval(model_name)(input_data, config)
     elif generator in ['sbm', 'dcsbm']:
+        import GraphGenerator.models.sbm as sbm
         graphs = sbm.generate(input_data, generator, repeat)
     elif generator in ['rmat', 'kronecker']:
+        import GraphGenerator.models.kronecker as kronecker
+        import GraphGenerator.models.rmat as rmat
         graphs = eval(generator).generate(input_data, config)
     elif generator in ['vgae', 'graphite']:
+        import GraphGenerator.models.vgae as vgae
+        import GraphGenerator.models.graphite as graphite
         set_device(config)
         sp_adj = nx.adjacency_matrix(input_data).astype(np.float32)
         # print("Shape!", sp_adj.shape)
@@ -145,14 +144,16 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
         print("Peak GPU memory reserved in training process: {} MiB".format(tmp_memory//1024//1024))
         flush_cached_gpu_memory()
         graphs = infer_autoencoder(sp_adj, feature, config, model, repeat=repeat)
-    elif generator in ['bigg']:
+    elif generator in ['gran', 'bigg']:
+        import GraphGenerator.models.bigg as bigg
+        import GraphGenerator.models.gran as gran
         if isinstance(input_data, nx.Graph):
             input_data = [input_data]
-        trained_model = bigg.train_bigg(input_data, config)
+        trained_model = eval("{}.train_{}".format(generator, generator))(input_data, config)
         tmp_memory = get_peak_gpu_memory()
         print("Peak GPU memory reserved in training process: {} MiB".format(tmp_memory//1024//1024))
         flush_cached_gpu_memory()
-        graphs = bigg.infer_bigg(input_data, config, trained_model)
+        graphs = eval("{}.infer_{}".format(generator, generator))(input_data, config, trained_model)
     else:
         print("Wrong generator name! Process exit..")
         sys.exit(1)
