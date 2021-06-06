@@ -46,7 +46,7 @@ def mkdir(folder):
 
 
 def set_device(config):
-    if torch.cuda.is_available() and int(config.gpu) >= 0 and config.device.startswith('cuda:'):
+    if int(config.gpu) >= 0 and config.device.startswith('cuda:'):
         os.environ["CUDA_VISIBLE_DEVICES"] = str(config.gpu)
         # config.device = 'cuda:0'
         print('use gpu indexed: {}'.format(config.gpu))

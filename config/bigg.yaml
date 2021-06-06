@@ -1,9 +1,9 @@
 ---
 exp_name: BiGG
 exp_dir: exp/BiGG
-device: cuda:1
+device: cuda:0
 #device: cpu
-gpu: 1
+gpu: 0
 seed: 1234
 dataset:
   name: top10
@@ -43,3 +43,6 @@ test:
   load_snapshot: false
   test_model_dir: exp/BiGG/BiGG_top10_2021-Mar-15-19-44-39_115041
   test_model_name: epoch-100.ckpt
+eval:
+  num_nodes: [100, 1000, 10000, 100000, 1000000]
+  graph_type: W-S # selected from [E-R, B-A, W-S, grid]

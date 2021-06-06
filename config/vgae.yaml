@@ -25,3 +25,6 @@ train:
 #test:
 #  test_model_dir: exp/VGAE/VGAE_cora_2021-Feb-25-10-38-59_12345
 #  test_model_name: model_snapshot_0001000.pth
+eval:
+  num_nodes: [100, 1000, 10000, 100000, 1000000]
+  graph_type: W-S # selected from [E-R, B-A, W-S, grid]

@@ -10,8 +10,7 @@ from GraphGenerator.models.bigg_ops.tree_clib.tree_lib import setup_treelib, Tre
 from GraphGenerator.models.bigg_ops.tree_model import RecurTreeGen
 
 
-def bigg_test(args):
-    config = get_config(args.config)
+def bigg_test(args, config):
     random.seed(config.seed)
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)

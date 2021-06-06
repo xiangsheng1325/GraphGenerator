@@ -17,37 +17,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 import numpy as np
 import sys, torch, copy, datetime
-
-
-def coo_to_csp(sp_coo):
-    num = sp_coo.shape[0]
-    row = sp_coo.row
-    col = sp_coo.col
-    sp_tensor = torch.sparse.FloatTensor(torch.LongTensor(np.stack([row, col])),
-                                         torch.tensor(sp_coo.data),
-                                         torch.Size([num, num]))
-    return sp_tensor
-
-
-def sp_normalize(adj_def, device='cpu'):
-    """
-    :param adj: scipy.sparse.coo_matrix
-    :param device: default as cpu
-    :return: normalized_adj:
-    """
-    adj_ = sp.coo_matrix(adj_def)
-    adj_ = adj_ + sp.coo_matrix(sp.eye(adj_def.shape[0]), dtype=np.float32)
-    rowsum = np.array(adj_.sum(axis=1)).reshape(-1)
-    norm_unit = np.float_power(rowsum, -0.5).astype(np.float32)
-    degree_mat_inv_sqrt = sp.diags(norm_unit)
-    degree_mat_sqrt = copy.copy(degree_mat_inv_sqrt)
-    # degree_mat_sqrt = degree_mat_inv_sqrt.to_dense()
-    support = adj_.__matmul__(degree_mat_sqrt)
-    # support = coo_to_csp(support.tocoo())
-    # degree_mat_inv_sqrt = coo_to_csp(degree_mat_inv_sqrt.tocoo())
-    adj_normalized = degree_mat_inv_sqrt.__matmul__(support)
-    adj_normalized = coo_to_csp(adj_normalized.tocoo())
-    return adj_normalized
+from GraphGenerator.evaluate.efficiency import coo_to_csp, sp_normalize
 
 
 def train_autoencoder(sp_adj, feature, config, model, optimizer):
