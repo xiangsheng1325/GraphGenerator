@@ -1,0 +1,63 @@
+---
+exp_name: GRAN
+exp_dir: exp/GRAN
+device: cuda:1
+gpu: 1
+#device: cpu
+seed: 1234
+dataset:
+  name: top10
+  data_path: data/
+  node_order: DFS
+  num_subgraph_batch: 1
+  num_fwd_pass: 1
+  has_node_feat: false
+  train_ratio: 0.8
+  dev_ratio: 0.2
+  is_save_split: false
+  is_sample_subgraph: true
+  is_overwrite_precompute: false
+model:
+  name: GRAN
+  num_mix_component: 20
+  is_sym: true
+  block_size: 1
+  sample_stride: 1
+  max_num_nodes: 1000
+  hidden_dim: 128
+  embedding_dim: 128
+  num_GNN_layers: 4
+  num_GNN_prop: 1
+  num_canonical_order: 1
+  dimension_reduce: true
+  has_attention: true
+  edge_weight: 1.0e+0
+train:
+  optimizer: Adam
+  lr: 1.0e-4
+  lr_decay: 0.3
+  lr_decay_epoch: [10000]
+  max_epochs: 10000
+  batch_size: 16
+  display_iter: 10
+  snapshot_epoch: 100
+  valid_epoch: 50
+  wd: 0.0e-4
+  save_snapshot: false
+  momentum: 0.9
+  shuffle: true
+  is_resume: false
+  resume_dir: # exp/GRAN/your_exp_folder
+  resume_model: model_snapshot_0005000.pth
+test:
+  batch_size: 20
+  num_workers: 0
+  num_test_gen: 10 # number of generated samples
+  is_vis: false
+  is_single_plot: false # visualize `num_vis` samples in a single image
+  is_test_ER: false # test Erdos-Renyi baseline
+  num_vis: 20
+  vis_num_row: 5 # visualize `num_vis` samples in `vis_num_row` rows
+  better_vis: true
+  test_model_dir: snapshot_model
+  test_model_name: gran_xx.pth
