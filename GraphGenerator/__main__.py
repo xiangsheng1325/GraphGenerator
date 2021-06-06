@@ -1,10 +1,10 @@
-import argparse, sys, pickle, warnings, os
+import argparse, sys, pickle, warnings, os, torch
+
+# import torch.cuda
+
 warnings.filterwarnings("ignore")
-from GraphGenerator.metrics import mmd
-from GraphGenerator.test import test_generator
-from GraphGenerator.train import train_base as train
-from GraphGenerator.preprocessing import dataio, utils
-from GraphGenerator.utils.arg_utils import get_config
+from GraphGenerator.preprocessing import dataio
+from GraphGenerator.utils.arg_utils import get_config, set_device
 import pandas as pd
 
 
@@ -37,6 +37,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print_variables(vars(args))
     if args.phase == 'preprocessing':
+        from GraphGenerator.preprocessing import utils
         tmp_path = args.input
         print("# Load edgelist...")
         graph = utils.edgelist_to_graph(tmp_path)
@@ -49,11 +50,13 @@ if __name__ == '__main__':
         dataio.save_data(graphlist, name=output_name)
 
     elif args.phase == 'train':
+        config = get_config(args.config)
+        set_device(config)
+        from GraphGenerator.train import train_base as train
         print("Start loading data...")
         input_data = dataio.load_data(args.input)
         if args.config is None:
             args.config = "config/{}.yaml".format(args.generator)
-        config = get_config(args.config)
         # os.environ["CUDA_VISIBLE_DEVICES"] = str(config.gpu)
         print("Start (training and) inferencing graph...")
         output_data = []
@@ -77,19 +80,31 @@ if __name__ == '__main__':
             output_name = args.output
         dataio.save_data(output_data, name=os.path.join(config.exp_dir, config.exp_name, output_name))
     elif args.phase == 'evaluate':
-        print("Start evaluating the generated graphs...")
-        graphs_ref = dataio.load_data(args.ref)
-        graphs_pred = dataio.load_data(args.input)
-        result = mmd.print_result(args.evaluate, graphs_ref, graphs_pred)
-        if args.output is None:
-            output_name = "{}_to_{}.csv".format(args.ref, args.input)
-        else:
-            output_name = args.output
-        tmp_pd = pd.DataFrame(result)
-        tmp_pd.to_csv(output_name)
+        config = get_config(args.config)
+        set_device(config)
+        if args.evaluate == 'efficiency':
+            from GraphGenerator.evaluate.efficiency import eval_efficiency
+            print("Start evaluating the efficiency of graph generator [{}].".format(args.generator))
+            result = eval_efficiency(args.generator, config)
+        elif args.evaluate == 'performance':
+            from GraphGenerator.metrics import mmd
+            print("Start evaluating the quality of generated graphs...")
+            graphs_ref = dataio.load_data(args.ref)
+            graphs_pred = dataio.load_data(args.input)
+            result = mmd.print_result(args.evaluate, graphs_ref, graphs_pred)
+            if args.output is None:
+                output_name = "{}_to_{}.csv".format(args.ref, args.input)
+            else:
+                output_name = args.output
+            tmp_pd = pd.DataFrame(result)
+            tmp_pd.to_csv(output_name)
     elif args.phase == 'test':
+        config = get_config(args.config)
+        set_device(config)
+        from GraphGenerator.test import test_generator
         print("Start test the package...")
-        test_generator(args)
+        test_generator(args, config)
+        print(torch.cuda.memory_reserved('cuda:0'))
         print("Test finished.")
     print("Done!")
     # sys.exit(0)
