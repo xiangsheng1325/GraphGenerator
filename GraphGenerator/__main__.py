@@ -104,7 +104,7 @@ if __name__ == '__main__':
         from GraphGenerator.test import test_generator
         print("Start test the package...")
         test_generator(args, config)
-        print(torch.cuda.memory_reserved('cuda:0'))
+        print("Memory reserved: {} KiB.".format(torch.cuda.memory_reserved(config.device)//1024))
         print("Test finished.")
     print("Done!")
     # sys.exit(0)

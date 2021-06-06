@@ -15,6 +15,7 @@ import networkx as nx
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.autograd import Variable
+from GraphGenerator.metrics.memory import get_peak_gpu_memory, flush_cached_gpu_memory
 import numpy as np
 import sys, torch, copy, datetime
 from GraphGenerator.evaluate.efficiency import coo_to_csp, sp_normalize
@@ -140,11 +141,17 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
             sys.exit(1)
         optimizer = optim.Adam(model.parameters(), lr=config.train.lr)
         model = train_autoencoder(sp_adj, feature, config, model, optimizer)
+        tmp_memory = get_peak_gpu_memory()
+        print("Peak GPU memory reserved in training process: {} MiB".format(tmp_memory//1024//1024))
+        flush_cached_gpu_memory()
         graphs = infer_autoencoder(sp_adj, feature, config, model, repeat=repeat)
     elif generator in ['bigg']:
         if isinstance(input_data, nx.Graph):
             input_data = [input_data]
         trained_model = bigg.train_bigg(input_data, config)
+        tmp_memory = get_peak_gpu_memory()
+        print("Peak GPU memory reserved in training process: {} MiB".format(tmp_memory//1024//1024))
+        flush_cached_gpu_memory()
         graphs = bigg.infer_bigg(input_data, config, trained_model)
     else:
         print("Wrong generator name! Process exit..")
