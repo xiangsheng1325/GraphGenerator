@@ -1,4 +1,5 @@
 import os
+import time
 import sys
 import pickle as cp
 import networkx as nx
@@ -97,6 +98,7 @@ def train_bigg(train_graphs, config):
     indices = list(range(len(train_graphs)))
     if config.train.resume_epoch is None:
         config.train.resume_epoch = 0
+    training_time = {'time_all':0., 'epochs':0,}
     for epoch in range(config.train.resume_epoch, config.train.max_epochs):
         pbar = tqdm(range(config.train.snapshot_epoch))
 
@@ -107,9 +109,13 @@ def train_bigg(train_graphs, config):
 
             num_nodes = sum([len(train_graphs[i]) for i in batch_indices])
             if config.model.blksize < 0 or num_nodes <= config.model.blksize:
+                start_time = time.time()
                 ll, _ = model.forward_train(batch_indices)
                 loss = -ll / num_nodes
                 loss.backward()
+                end_time = time.time()
+                training_time['time_all'] = training_time['time_all'] + end_time - start_time
+                training_time['epochs'] = training_time['epochs'] + 1
                 loss = loss.item()
             else:
                 ll = 0.0
@@ -125,8 +131,10 @@ def train_bigg(train_graphs, config):
                 optimizer.step()
                 optimizer.zero_grad()
             pbar.set_description('epoch %.2f, loss: %.4f' % (epoch + (idx + 1) / config.train.snapshot_epoch, loss))
-
-        torch.save(model.state_dict(), os.path.join(config.exp_dir, config.exp_name, 'epoch-%d.ckpt' % (epoch + 1)))
+        if config.train.save_snapshot:
+            torch.save(model.state_dict(), os.path.join(config.exp_dir, config.exp_name, 'epoch-%d.ckpt' % (epoch + 1)))
+    train_time = training_time['time_all'] / training_time['epochs']
+    print("Time consumption of one epoch of training BiGG is: {:.6f}".format(train_time))
     return model
 
 
@@ -151,18 +159,25 @@ def infer_bigg(test_graphs, config, model=None):
     # get num nodes dist
     num_node_dist = get_node_dist(test_graphs)
     gen_graphs = []
+    infering_time = {'time_all': 0., 'epochs': 0, }
     with torch.no_grad():
         for _ in tqdm(range(config.test.num_test_gen)):
             num_nodes = np.argmax(np.random.multinomial(1, num_node_dist))
+            start_time = time.time()
             _, pred_edges, _ = model(num_nodes, display=config.test.display)
             for e in pred_edges:
                 assert e[0] > e[1]
             pred_g = nx.Graph()
             pred_g.add_edges_from(pred_edges)
+            end_time = time.time()
+            infering_time['time_all'] = infering_time['time_all'] + end_time - start_time
+            infering_time['epochs'] = infering_time['epochs'] + 1
             gen_graphs.append(pred_g)
     # print('saving graphs')
     # with open(test_model_path + '.graphs-%s' % str(config.test.greedy_frac), 'wb') as f:
     #     cp.dump(gen_graphs, f, cp.HIGHEST_PROTOCOL)
     # print('evaluating')
+    infer_time = infering_time['time_all'] / infering_time['epochs']
+    print("\nTime consumption of infering one graph by BiGG is: {:.6f}".format(infer_time))
     return gen_graphs
     # sys.exit(0)

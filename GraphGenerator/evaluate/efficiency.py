@@ -44,7 +44,8 @@ def eval_speed(func, args):
 def eval_efficiency(generator, config=None):
     from GraphGenerator.train import train_base as train
     # data_sizes = [100, int(1e+3), int(1e+4), int(1e+5), int(1e+6)]
-    data_sizes = config.eval.num_nodes
+    data_sizes = [10000]
+    # data_sizes = config.eval.num_nodes
     print("The tested graph size is: {}.".format(data_sizes))
     output_data = []
     for size in data_sizes:
@@ -52,14 +53,12 @@ def eval_efficiency(generator, config=None):
         new_adj = nx.adjacency_matrix(new_g)
         new_adj = sp.coo_matrix(new_adj)
         # adj_input = coo_to_csp(new_adj)
-        # todo: train and infer
-        print("Start (training and) inferencing graph...")
+        print("Start (training and) inferencing graph with {} nodes...".format(size))
         tmp_data = train.train_and_inference(new_g, generator, config=config)
         if isinstance(tmp_data, list):
             output_data.extend(tmp_data)
         else:
             output_data.append(tmp_data)
-        # todo: calculate inference time and training time
     return output_data
 
 
@@ -68,5 +67,5 @@ if __name__ == '__main__':
     from GraphGenerator.utils.arg_utils import get_config, set_device
     config = get_config(conf_name)
     set_device(config)
-    eval_efficiency("bigg", config)
-    # eval()
+    out = eval_efficiency("bigg", config)
+    #

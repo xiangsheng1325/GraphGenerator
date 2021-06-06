@@ -1,9 +1,9 @@
 ---
 exp_name: BiGG
 exp_dir: exp/BiGG
-device: cuda:0
+device: cuda:2
 #device: cpu
-gpu: 0
+gpu: 2
 seed: 1234
 dataset:
   name: top10
@@ -31,6 +31,7 @@ train:
   accum_grad: 1
   max_epochs: 100
   display_iter: 10
+  save_snapshot: false
   snapshot_epoch: 100
   resume: false
   resume_epoch: 99
