@@ -1,12 +1,8 @@
 from __future__ import (division, print_function)
-import os
 import networkx as nx
 import copy
-import pickle
-from collections import defaultdict
-from tqdm import tqdm
+import matplotlib.pyplot as plt
 import concurrent.futures
-import torch
 import torch.utils.data
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
@@ -14,30 +10,250 @@ from tensorboardX import SummaryWriter
 from torch.nn.utils import clip_grad_norm_
 import torch.utils.data.distributed as distributed
 import time
-import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
-import torch
 import time
-import os
-import pickle
 import glob
-import numpy as np
-import networkx as nx
 from tqdm import tqdm
 from collections import defaultdict
 import torch.nn.functional as F
-import os
-import torch
 import pickle
 import numpy as np
 from scipy import sparse as sp
-import networkx as nx
-import torch.nn.functional as F
+from GraphGenerator.utils.logger import get_logger
+import os
+import yaml
+from GraphGenerator.utils.arg_utils import edict2dict
+from GraphGenerator.evaluate.distance import compute_mmd, gaussian_emd, gaussian_tv, gaussian
+from GraphGenerator.evaluate.mmd import degree_stats, orbit_stats_all, spectral_stats, clustering_stats
+from easydict import EasyDict as edict
+# load eval_helper
+import operator
+import torch
+import warnings
+from torch.nn.modules import Module
+from torch.nn.parallel.scatter_gather import scatter_kwargs, gather
+from torch.nn.parallel.replicate import replicate
+from torch.nn.parallel.parallel_apply import parallel_apply
 
+try:
+  ###
+  # workaround for solving the issue of multi-worker
+  # https://github.com/pytorch/pytorch/issues/973
+  import resource
+  rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
+  resource.setrlimit(resource.RLIMIT_NOFILE, (10000, rlimit[1]))
+  ###
+except:
+  pass
 
 EPS = np.finfo(np.float32).eps
+logger = get_logger('exp_logger')
+NPR = np.random.RandomState(seed=1234)
+
+
+def _check_balance(device_ids):
+  imbalance_warn = """
+    There is an imbalance between your GPUs. You may want to exclude GPU {} which
+    has less than 75% of the memory or cores of GPU {}. You can do so by setting
+    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
+    environment variable."""
+
+  dev_props = [torch.cuda.get_device_properties(i) for i in device_ids]
+
+  def warn_imbalance(get_prop):
+    values = [get_prop(props) for props in dev_props]
+    min_pos, min_val = min(enumerate(values), key=operator.itemgetter(1))
+    max_pos, max_val = max(enumerate(values), key=operator.itemgetter(1))
+    if min_val / max_val < 0.75:
+      warnings.warn(
+          imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
+      return True
+    return False
+
+  if warn_imbalance(lambda props: props.total_memory):
+    return
+  if warn_imbalance(lambda props: props.multi_processor_count):
+    return
+
+
+class DataParallel(Module):
+  r"""Implements data parallelism at the module level.
+
+    This container parallelizes the application of the given module by
+    splitting the input across the specified devices by chunking in the batch
+    dimension. In the forward pass, the module is replicated on each device,
+    and each replica handles a portion of the input. During the backwards
+    pass, gradients from each replica are summed into the original module.
+
+    The batch size should be larger than the number of GPUs used. It should
+    also be an integer multiple of the number of GPUs so that each chunk is the
+    same size (so that each GPU processes the same number of samples).
+
+    See also: :ref:`cuda-nn-dataparallel-instead`
+
+    Arbitrary positional and keyword inputs are allowed to be passed into
+    DataParallel EXCEPT Tensors. All variables will be scattered on dim
+    specified (default 0). Primitive types will be broadcasted, but all
+    other types will be a shallow copy and can be corrupted if written to in
+    the model's forward pass.
+
+    Args:
+        module: module to be parallelized
+        device_ids: CUDA devices (default: all devices)
+        output_device: device location of output (default: device_ids[0])
+
+    Example::
+
+        >>> net = torch.nn.DataParallel(model, device_ids=[0, 1, 2])
+        >>> output = net(input_var)
+    """
+
+
+  def __init__(self,
+               module,
+               device_ids=None,
+               output_device=None,
+               dim=0,
+               gather_output=True):
+    super(DataParallel, self).__init__()
+
+    if not torch.cuda.is_available():
+      self.module = module
+      self.device_ids = []
+      return
+
+    if device_ids is None:
+      device_ids = list(range(torch.cuda.device_count()))
+    if output_device is None:
+      output_device = device_ids[0]
+    self.dim = dim
+    self.module = module
+    self.device_ids = device_ids
+    self.output_device = output_device
+
+    _check_balance(self.device_ids)
+
+    if len(self.device_ids) == 1:
+      self.module.cuda(device_ids[0])
+    self.gather_output = gather_output
+
+  def forward(self, *inputs, **kwargs):
+    if not self.device_ids:
+      return self.module(*inputs, **kwargs)
+    # inputs, kwargs = self.scatter(inputs, kwargs, self.device_ids)
+    assert kwargs == {}, 'not implemented'
+    kwargs = [{} for _ in range(len(inputs))]
+    if len(self.device_ids) == 1:
+      return self.module(*inputs[0], **kwargs[0])
+    replicas = self.replicate(self.module, self.device_ids[:len(inputs)])
+    outputs = self.parallel_apply(replicas, inputs, kwargs)
+    if self.gather_output or len(self.device_ids) == 1:
+      return self.gather(outputs, self.output_device)
+    else:
+      return outputs
+
+  def replicate(self, module, device_ids):
+    return replicate(module, device_ids)
+
+  def scatter(self, inputs, kwargs, device_ids):
+    return scatter_kwargs(inputs, kwargs, device_ids, dim=self.dim)
+
+  def parallel_apply(self, replicas, inputs, kwargs):
+    return parallel_apply(replicas, inputs, kwargs,
+                          self.device_ids[:len(replicas)])
+
+  def gather(self, outputs, output_device):
+    return gather(outputs, output_device, dim=self.dim)
+
+
+def data_to_gpu(*input_data):
+    return_data = []
+    for dd in input_data:
+        if type(dd).__name__ == 'Tensor':
+            return_data += [dd.cuda()]
+
+    return tuple(return_data)
+
+
+def snapshot(model, optimizer, config, step, gpus=[0], tag=None, scheduler=None):
+    if scheduler is not None:
+        model_snapshot = {
+            "model": model.state_dict(),
+            "optimizer": optimizer.state_dict(),
+            "scheduler": scheduler.state_dict(),
+            "step": step
+        }
+    else:
+        model_snapshot = {
+            "model": model.state_dict(),
+            "optimizer": optimizer.state_dict(),
+            "step": step
+        }
+
+    torch.save(model_snapshot,
+               os.path.join(config.save_dir, "model_snapshot_{}.pth".format(tag)
+               if tag is not None else
+               "model_snapshot_{:07d}.pth".format(step)))
+    # update config file's test path
+    save_name = os.path.join(config.save_dir, 'config.yaml')
+    # config_save = edict(yaml.load(open(save_name, 'r'), Loader=yaml.FullLoader))
+    config_save = edict(yaml.load(open(save_name, 'r')))
+    config_save.test.test_model_dir = config.save_dir
+    config_save.test.test_model_name = "model_snapshot_{}.pth".format(
+        tag) if tag is not None else "model_snapshot_{:07d}.pth".format(step)
+    yaml.dump(edict2dict(config_save), open(save_name, 'w'), default_flow_style=False)
+
+
+def load_model(model, file_name, device, optimizer=None, scheduler=None):
+    model_snapshot = torch.load(file_name, map_location=device)
+    model.load_state_dict(model_snapshot["model"])
+    if optimizer is not None:
+        optimizer.load_state_dict(model_snapshot["optimizer"])
+
+    if scheduler is not None:
+        scheduler.load_state_dict(model_snapshot["scheduler"])
+
+
+class EarlyStopper(object):
+    """
+      Check whether the early stop condition (always
+      observing decrease in a window of time steps) is met.
+
+      Usage:
+        my_stopper = EarlyStopper([0, 0], 1)
+        is_stop = my_stopper.tick([-1,-1]) # returns True
+    """
+
+    def __init__(self, init_val, win_size=10, is_decrease=True):
+        if not isinstance(init_val, list):
+            raise ValueError("EarlyStopper only takes list of int/floats")
+
+        self._win_size = win_size
+        self._num_val = len(init_val)
+        self._val = [[False] * win_size for _ in range(self._num_val)]
+        self._last_val = init_val[:]
+        self._comp_func = (lambda x, y: x < y) if is_decrease else (
+            lambda x, y: x >= y)
+
+    def tick(self, val):
+        if not isinstance(val, list):
+            raise ValueError("EarlyStopper only takes list of int/floats")
+
+        assert len(val) == self._num_val
+
+        for ii in range(self._num_val):
+            self._val[ii].pop(0)
+
+            if self._comp_func(val[ii], self._last_val[ii]):
+                self._val[ii].append(True)
+            else:
+                self._val[ii].append(False)
+
+            self._last_val[ii] = val[ii]
+
+        is_stop = all([all(xx) for xx in self._val])
+
+        return is_stop
 
 
 class GNN(nn.Module):
@@ -721,6 +937,64 @@ def graph_load_batch(data_dir,
   return graphs
 
 
+def create_graphs(graph_type, data_dir='data', noise=10.0, seed=1234):
+    npr = np.random.RandomState(seed)
+    ### load datasets
+    graphs = []
+    # synthetic graphs
+    if graph_type == 'grid':
+        graphs = []
+        for i in range(10, 20):
+            for j in range(10, 20):
+                graphs.append(nx.grid_2d_graph(i, j))
+    elif graph_type == 'lobster':
+        graphs = []
+        p1 = 0.7
+        p2 = 0.7
+        count = 0
+        min_node = 10
+        max_node = 100
+        max_edge = 0
+        mean_node = 80
+        num_graphs = 100
+
+        seed_tmp = seed
+        while count < num_graphs:
+            G = nx.random_lobster(mean_node, p1, p2, seed=seed_tmp)
+            if len(G.nodes()) >= min_node and len(G.nodes()) <= max_node:
+                graphs.append(G)
+                if G.number_of_edges() > max_edge:
+                    max_edge = G.number_of_edges()
+
+                count += 1
+
+            seed_tmp += 1
+    elif graph_type == 'DD':
+        graphs = graph_load_batch(
+            data_dir,
+            min_num_nodes=100,
+            max_num_nodes=500,
+            name='DD',
+            node_attributes=False,
+            graph_labels=True)
+        # args.max_prev_node = 230
+    elif graph_type == 'FIRSTMM_DB':
+        graphs = graph_load_batch(
+            data_dir,
+            min_num_nodes=0,
+            max_num_nodes=10000,
+            name='FIRSTMM_DB',
+            node_attributes=False,
+            graph_labels=True)
+
+    num_nodes = [gg.number_of_nodes() for gg in graphs]
+    num_edges = [gg.number_of_edges() for gg in graphs]
+    print('max # nodes = {} || mean # nodes = {}'.format(max(num_nodes), np.mean(num_nodes)))
+    print('max # edges = {} || mean # edges = {}'.format(max(num_edges), np.mean(num_edges)))
+
+    return graphs
+
+
 class GRANData(object):
 
   def __init__(self, config, graphs, tag='train'):
@@ -1075,3 +1349,456 @@ class GRANData(object):
     return batch_data
 
 
+def compute_edge_ratio(G_list):
+    num_edges_max, num_edges = .0, .0
+    for gg in G_list:
+        num_nodes = gg.number_of_nodes()
+        num_edges += gg.number_of_edges()
+        num_edges_max += num_nodes ** 2
+
+    ratio = (num_edges_max - num_edges) / num_edges
+    return ratio
+
+
+def get_graph(adj):
+    """ get a graph from zero-padded adj """
+    # remove all zeros rows and columns
+    adj = adj[~np.all(adj == 0, axis=1)]
+    adj = adj[:, ~np.all(adj == 0, axis=0)]
+    adj = np.asmatrix(adj)
+    G = nx.from_numpy_matrix(adj)
+    return G
+
+
+def evaluate(graph_gt, graph_pred, degree_only=True):
+    mmd_degree = degree_stats(graph_gt, graph_pred)
+
+    if degree_only:
+        mmd_4orbits = 0.0
+        mmd_clustering = 0.0
+        mmd_spectral = 0.0
+    else:
+        mmd_4orbits = orbit_stats_all(graph_gt, graph_pred)
+        mmd_clustering = clustering_stats(graph_gt, graph_pred)
+        mmd_spectral = spectral_stats(graph_gt, graph_pred)
+
+    return mmd_degree, mmd_clustering, mmd_4orbits, mmd_spectral
+
+
+def draw_graph_list(G_list,
+                    row,
+                    col,
+                    fname='exp/gen_graph.png',
+                    layout='spring',
+                    is_single=False,
+                    k=1,
+                    node_size=55,
+                    alpha=1,
+                    width=1.3):
+    plt.switch_backend('agg')
+    for i, G in enumerate(G_list):
+        plt.subplot(row, col, i + 1)
+        plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
+        # plt.axis("off")
+
+        # turn off axis label
+        plt.xticks([])
+        plt.yticks([])
+
+        if layout == 'spring':
+            pos = nx.spring_layout(
+                G, k=k / np.sqrt(G.number_of_nodes()), iterations=100)
+        elif layout == 'spectral':
+            pos = nx.spectral_layout(G)
+
+        if is_single:
+            # node_size default 60, edge_width default 1.5
+            nx.draw_networkx_nodes(
+                G,
+                pos,
+                node_size=node_size,
+                node_color='#336699',
+                alpha=1,
+                linewidths=0,
+                font_size=0)
+            nx.draw_networkx_edges(G, pos, alpha=alpha, width=width)
+        else:
+            nx.draw_networkx_nodes(
+                G,
+                pos,
+                node_size=1.5,
+                node_color='#336699',
+                alpha=1,
+                linewidths=0.2,
+                font_size=1.5)
+            nx.draw_networkx_edges(G, pos, alpha=0.3, width=0.2)
+
+    plt.tight_layout()
+    plt.savefig(fname, dpi=300)
+    plt.close()
+
+
+def draw_graph_list_separate(G_list,
+                             fname='exp/gen_graph',
+                             layout='spring',
+                             is_single=False,
+                             k=1,
+                             node_size=55,
+                             alpha=1,
+                             width=1.3):
+    for i, G in enumerate(G_list):
+        plt.switch_backend('agg')
+
+        plt.axis("off")
+
+        # turn off axis label
+        # plt.xticks([])
+        # plt.yticks([])
+
+        if layout == 'spring':
+            pos = nx.spring_layout(
+                G, k=k / np.sqrt(G.number_of_nodes()), iterations=100)
+        elif layout == 'spectral':
+            pos = nx.spectral_layout(G)
+
+        if is_single:
+            # node_size default 60, edge_width default 1.5
+            nx.draw_networkx_nodes(
+                G,
+                pos,
+                node_size=node_size,
+                node_color='#336699',
+                alpha=1,
+                linewidths=0,
+                font_size=0)
+            nx.draw_networkx_edges(G, pos, alpha=alpha, width=width)
+        else:
+            nx.draw_networkx_nodes(
+                G,
+                pos,
+                node_size=1.5,
+                node_color='#336699',
+                alpha=1,
+                linewidths=0.2,
+                font_size=1.5)
+            nx.draw_networkx_edges(G, pos, alpha=0.3, width=0.2)
+
+        plt.draw()
+        plt.tight_layout()
+        plt.savefig(fname + '_{:03d}.png'.format(i), dpi=300)
+        plt.close()
+
+
+class GranRunner(object):
+
+    def __init__(self, config):
+        self.config = config
+        self.seed = config.seed
+        self.dataset_conf = config.dataset
+        self.model_conf = config.model
+        self.train_conf = config.train
+        self.test_conf = config.test
+        self.use_gpu = config.use_gpu
+        self.gpus = config.gpus
+        self.device = config.device
+        self.writer = SummaryWriter(config.save_dir)
+        self.is_vis = config.test.is_vis
+        self.better_vis = config.test.better_vis
+        self.num_vis = config.test.num_vis
+        self.vis_num_row = config.test.vis_num_row
+        self.is_single_plot = config.test.is_single_plot
+        self.num_gpus = len(self.gpus)
+        self.is_shuffle = False
+
+        assert self.use_gpu == True
+
+        if self.train_conf.is_resume:
+            self.config.save_dir = self.train_conf.resume_dir
+
+        ### load graphs
+        self.graphs = create_graphs(config.dataset.name, data_dir=config.dataset.data_path)
+
+        self.train_ratio = config.dataset.train_ratio
+        self.dev_ratio = config.dataset.dev_ratio
+        self.block_size = config.model.block_size
+        self.stride = config.model.sample_stride
+        self.num_graphs = len(self.graphs)
+        self.num_train = int(float(self.num_graphs) * self.train_ratio)
+        self.num_dev = int(float(self.num_graphs) * self.dev_ratio)
+        self.num_test_gt = self.num_graphs - self.num_train
+        self.num_test_gen = config.test.num_test_gen
+
+        logger.info('Train/val/test = {}/{}/{}'.format(self.num_train, self.num_dev,
+                                                       self.num_test_gt))
+
+        ### shuffle all graphs
+        if self.is_shuffle:
+            self.npr = np.random.RandomState(self.seed)
+            self.npr.shuffle(self.graphs)
+
+        self.graphs_train = self.graphs[:self.num_train]
+        self.graphs_dev = self.graphs[:self.num_dev]
+        self.graphs_test = self.graphs[self.num_train:]
+
+        self.config.dataset.sparse_ratio = compute_edge_ratio(self.graphs_train)
+        logger.info('No Edges vs. Edges in training set = {}'.format(
+            self.config.dataset.sparse_ratio))
+
+        self.num_nodes_pmf_train = np.bincount([len(gg.nodes) for gg in self.graphs_train])
+        self.max_num_nodes = len(self.num_nodes_pmf_train)
+        self.num_nodes_pmf_train = self.num_nodes_pmf_train / self.num_nodes_pmf_train.sum()
+
+        ### save split for benchmarking
+        if config.dataset.is_save_split:
+            base_path = os.path.join(config.dataset.data_path, 'save_split')
+            if not os.path.exists(base_path):
+                os.makedirs(base_path)
+
+            save_graph_list(
+                self.graphs_train,
+                os.path.join(base_path, '{}_train.p'.format(config.dataset.name)))
+            save_graph_list(
+                self.graphs_dev,
+                os.path.join(base_path, '{}_dev.p'.format(config.dataset.name)))
+            save_graph_list(
+                self.graphs_test,
+                os.path.join(base_path, '{}_test.p'.format(config.dataset.name)))
+
+    def train(self):
+        ### create data loader
+        train_dataset = eval(self.dataset_conf.loader_name)(self.config, self.graphs_train, tag='train')
+        train_loader = torch.utils.data.DataLoader(
+            train_dataset,
+            batch_size=self.train_conf.batch_size,
+            shuffle=self.train_conf.shuffle,
+            num_workers=self.train_conf.num_workers,
+            collate_fn=train_dataset.collate_fn,
+            drop_last=False)
+
+        # create models
+        model = eval(self.model_conf.name)(self.config)
+
+        if self.use_gpu:
+            model = DataParallel(model, device_ids=self.gpus).to(self.device)
+
+        # create optimizer
+        params = filter(lambda p: p.requires_grad, model.parameters())
+        if self.train_conf.optimizer == 'SGD':
+            optimizer = optim.SGD(
+                params,
+                lr=self.train_conf.lr,
+                momentum=self.train_conf.momentum,
+                weight_decay=self.train_conf.wd)
+        elif self.train_conf.optimizer == 'Adam':
+            optimizer = optim.Adam(params, lr=self.train_conf.lr, weight_decay=self.train_conf.wd)
+        else:
+            raise ValueError("Non-supported optimizer!")
+
+        early_stop = EarlyStopper([0.0], win_size=100, is_decrease=False)
+        lr_scheduler = optim.lr_scheduler.MultiStepLR(
+            optimizer,
+            milestones=self.train_conf.lr_decay_epoch,
+            gamma=self.train_conf.lr_decay)
+
+        # reset gradient
+        optimizer.zero_grad()
+
+        # resume training
+        resume_epoch = 0
+        if self.train_conf.is_resume:
+            model_file = os.path.join(self.train_conf.resume_dir,
+                                      self.train_conf.resume_model)
+            load_model(
+                model.module if self.use_gpu else model,
+                model_file,
+                self.device,
+                optimizer=optimizer,
+                scheduler=lr_scheduler)
+            resume_epoch = self.train_conf.resume_epoch
+
+        # Training Loop
+        iter_count = 0
+        results = defaultdict(list)
+        for epoch in range(resume_epoch, self.train_conf.max_epoch):
+            model.train()
+            lr_scheduler.step()
+            train_iterator = train_loader.__iter__()
+
+            for inner_iter in range(len(train_loader) // self.num_gpus):
+                optimizer.zero_grad()
+
+                batch_data = []
+                if self.use_gpu:
+                    for _ in self.gpus:
+                        data = train_iterator.next()
+                        batch_data.append(data)
+                        iter_count += 1
+
+                avg_train_loss = .0
+                for ff in range(self.dataset_conf.num_fwd_pass):
+                    batch_fwd = []
+
+                    if self.use_gpu:
+                        for dd, gpu_id in enumerate(self.gpus):
+                            data = {}
+                            data['adj'] = batch_data[dd][ff]['adj'].pin_memory().to(gpu_id, non_blocking=True)
+                            data['edges'] = batch_data[dd][ff]['edges'].pin_memory().to(gpu_id, non_blocking=True)
+                            data['node_idx_gnn'] = batch_data[dd][ff]['node_idx_gnn'].pin_memory().to(gpu_id,
+                                                                                                      non_blocking=True)
+                            data['node_idx_feat'] = batch_data[dd][ff]['node_idx_feat'].pin_memory().to(gpu_id,
+                                                                                                        non_blocking=True)
+                            data['label'] = batch_data[dd][ff]['label'].pin_memory().to(gpu_id, non_blocking=True)
+                            data['att_idx'] = batch_data[dd][ff]['att_idx'].pin_memory().to(gpu_id, non_blocking=True)
+                            data['subgraph_idx'] = batch_data[dd][ff]['subgraph_idx'].pin_memory().to(gpu_id,
+                                                                                                      non_blocking=True)
+                            data['subgraph_idx_base'] = batch_data[dd][ff]['subgraph_idx_base'].pin_memory().to(gpu_id,
+                                                                                                                non_blocking=True)
+                            batch_fwd.append((data,))
+
+                    if batch_fwd:
+                        train_loss = model(*batch_fwd).mean()
+                        avg_train_loss += train_loss
+
+                        # assign gradient
+                        train_loss.backward()
+
+                # clip_grad_norm_(model.parameters(), 5.0e-0)
+                optimizer.step()
+                avg_train_loss /= float(self.dataset_conf.num_fwd_pass)
+
+                # reduce
+                train_loss = float(avg_train_loss.data.cpu().numpy())
+
+                self.writer.add_scalar('train_loss', train_loss, iter_count)
+                results['train_loss'] += [train_loss]
+                results['train_step'] += [iter_count]
+
+                if iter_count % self.train_conf.display_iter == 0 or iter_count == 1:
+                    logger.info(
+                        "NLL Loss @ epoch {:04d} iteration {:08d} = {}".format(epoch + 1, iter_count, train_loss))
+
+            # snapshot model
+            if (epoch + 1) % self.train_conf.snapshot_epoch == 0:
+                logger.info("Saving Snapshot @ epoch {:04d}".format(epoch + 1))
+                snapshot(model.module if self.use_gpu else model, optimizer, self.config, epoch + 1,
+                         scheduler=lr_scheduler)
+
+        pickle.dump(results, open(os.path.join(self.config.save_dir, 'train_stats.p'), 'wb'))
+        self.writer.close()
+
+        return 1
+
+    def test(self):
+        self.config.save_dir = self.test_conf.test_model_dir
+
+        ### Compute Erdos-Renyi baseline
+        if self.config.test.is_test_ER:
+            p_ER = sum([aa.number_of_edges() for aa in self.graphs_train]) / sum(
+                [aa.number_of_nodes() ** 2 for aa in self.graphs_train])
+            graphs_gen = [nx.fast_gnp_random_graph(self.max_num_nodes, p_ER, seed=ii) for ii in
+                          range(self.num_test_gen)]
+        else:
+            ### load model
+            model = eval(self.model_conf.name)(self.config)
+            model_file = os.path.join(self.config.save_dir, self.test_conf.test_model_name)
+            load_model(model, model_file, self.device)
+
+            if self.use_gpu:
+                model = nn.DataParallel(model, device_ids=self.gpus).to(self.device)
+
+            model.eval()
+
+            ### Generate Graphs
+            A_pred = []
+            num_nodes_pred = []
+            num_test_batch = int(np.ceil(self.num_test_gen / self.test_conf.batch_size))
+
+            gen_run_time = []
+            for ii in tqdm(range(num_test_batch)):
+                with torch.no_grad():
+                    start_time = time.time()
+                    input_dict = {}
+                    input_dict['is_sampling'] = True
+                    input_dict['batch_size'] = self.test_conf.batch_size
+                    input_dict['num_nodes_pmf'] = self.num_nodes_pmf_train
+                    A_tmp = model(input_dict)
+                    gen_run_time += [time.time() - start_time]
+                    A_pred += [aa.data.cpu().numpy() for aa in A_tmp]
+                    num_nodes_pred += [aa.shape[0] for aa in A_tmp]
+
+            logger.info('Average test time per mini-batch = {}'.format(
+                np.mean(gen_run_time)))
+
+            graphs_gen = [get_graph(aa) for aa in A_pred]
+
+        ### Visualize Generated Graphs
+        if self.is_vis:
+            num_col = self.vis_num_row
+            num_row = int(np.ceil(self.num_vis / num_col))
+            test_epoch = self.test_conf.test_model_name
+            test_epoch = test_epoch[test_epoch.rfind('_') + 1:test_epoch.find('.pth')]
+            save_name = os.path.join(self.config.save_dir, '{}_gen_graphs_epoch_{}_block_{}_stride_{}.png'.format(
+                self.config.test.test_model_name[:-4], test_epoch, self.block_size, self.stride))
+
+            # remove isolated nodes for better visulization
+            graphs_pred_vis = [copy.deepcopy(gg) for gg in graphs_gen[:self.num_vis]]
+
+            if self.better_vis:
+                for gg in graphs_pred_vis:
+                    gg.remove_nodes_from(list(nx.isolates(gg)))
+
+            # display the largest connected component for better visualization
+            vis_graphs = []
+            for gg in graphs_pred_vis:
+                CGs = [gg.subgraph(c) for c in nx.connected_components(gg)]
+                CGs = sorted(CGs, key=lambda x: x.number_of_nodes(), reverse=True)
+                vis_graphs += [CGs[0]]
+
+            if self.is_single_plot:
+                draw_graph_list(vis_graphs, num_row, num_col, fname=save_name, layout='spring')
+            else:
+                draw_graph_list_separate(vis_graphs, fname=save_name[:-4], is_single=True, layout='spring')
+
+            save_name = os.path.join(self.config.save_dir, 'train_graphs.png')
+
+            if self.is_single_plot:
+                draw_graph_list(
+                    self.graphs_train[:self.num_vis],
+                    num_row,
+                    num_col,
+                    fname=save_name,
+                    layout='spring')
+            else:
+                draw_graph_list_separate(
+                    self.graphs_train[:self.num_vis],
+                    fname=save_name[:-4],
+                    is_single=True,
+                    layout='spring')
+
+        ### Evaluation
+        # if self.config.dataset.name in ['lobster']:
+        #     acc = eval_acc_lobster_graph(graphs_gen)
+        #     logger.info('Validity accuracy of generated graphs = {}'.format(acc))
+
+        num_nodes_gen = [len(aa) for aa in graphs_gen]
+
+        # Compared with Validation Set
+        num_nodes_dev = [len(gg.nodes) for gg in self.graphs_dev]  # shape B X 1
+        mmd_degree_dev, mmd_clustering_dev, mmd_4orbits_dev, mmd_spectral_dev = evaluate(self.graphs_dev, graphs_gen,
+                                                                                         degree_only=False)
+        mmd_num_nodes_dev = compute_mmd([np.bincount(num_nodes_dev)], [np.bincount(num_nodes_gen)], kernel=gaussian_emd)
+
+        # Compared with Test Set
+        num_nodes_test = [len(gg.nodes) for gg in self.graphs_test]  # shape B X 1
+        mmd_degree_test, mmd_clustering_test, mmd_4orbits_test, mmd_spectral_test = evaluate(self.graphs_test,
+                                                                                             graphs_gen,
+                                                                                             degree_only=False)
+        mmd_num_nodes_test = compute_mmd([np.bincount(num_nodes_test)], [np.bincount(num_nodes_gen)],
+                                         kernel=gaussian_emd)
+
+        logger.info("Validation MMD scores of #nodes/degree/clustering/4orbits/spectral are = {}/{}/{}/{}/{}".format(
+            mmd_num_nodes_dev, mmd_degree_dev, mmd_clustering_dev, mmd_4orbits_dev, mmd_spectral_dev))
+        logger.info("Test MMD scores of #nodes/degree/clustering/4orbits/spectral are = {}/{}/{}/{}/{}".format(
+            mmd_num_nodes_test, mmd_degree_test, mmd_clustering_test, mmd_4orbits_test, mmd_spectral_test))
+
+        return mmd_degree_dev, mmd_clustering_dev, mmd_4orbits_dev, mmd_spectral_dev, mmd_degree_test, mmd_clustering_test, mmd_4orbits_test, mmd_spectral_test
