@@ -7,11 +7,11 @@ import torch, os
 ## reset peak gpu memory cached
 # torch.cuda.reset_peak_memory_stats()
 
-def get_peak_gpu_memory():
+def get_peak_gpu_memory(device='cuda:0'):
     """
     :return: maximum memory cached (Byte)
     """
-    return torch.cuda.max_memory_reserved()
+    return torch.cuda.max_memory_reserved(device)
 
 
 def flush_cached_gpu_memory():

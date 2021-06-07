@@ -1,24 +1,26 @@
 ---
 exp_name: GRAN
 exp_dir: exp/GRAN
-device: cuda:1
-gpu: 1
+use_gpu: true
+device: cuda:0
+gpu: 0
 #device: cpu
 seed: 1234
 dataset:
+  loader_name: GRANData
   name: top10
   data_path: data/
   node_order: DFS
   num_subgraph_batch: 1
   num_fwd_pass: 1
   has_node_feat: false
-  train_ratio: 0.8
-  dev_ratio: 0.2
+  train_ratio: 1.0
+  dev_ratio: 1.0
   is_save_split: false
   is_sample_subgraph: true
   is_overwrite_precompute: false
 model:
-  name: GRAN
+  name: GRANMixtureBernoulli
   num_mix_component: 20
   is_sym: true
   block_size: 1
@@ -37,7 +39,8 @@ train:
   lr: 1.0e-4
   lr_decay: 0.3
   lr_decay_epoch: [10000]
-  max_epochs: 10000
+  num_workers: 8
+  max_epoch: 20
   batch_size: 16
   display_iter: 10
   snapshot_epoch: 100
@@ -50,7 +53,7 @@ train:
   resume_dir: # exp/GRAN/your_exp_folder
   resume_model: model_snapshot_0005000.pth
 test:
-  batch_size: 20
+  batch_size: 1
   num_workers: 0
   num_test_gen: 10 # number of generated samples
   is_vis: false

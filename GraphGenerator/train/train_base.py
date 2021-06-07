@@ -140,7 +140,7 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
             sys.exit(1)
         optimizer = optim.Adam(model.parameters(), lr=config.train.lr)
         model = train_autoencoder(sp_adj, feature, config, model, optimizer)
-        tmp_memory = get_peak_gpu_memory()
+        tmp_memory = get_peak_gpu_memory(device=config.device)
         print("Peak GPU memory reserved in training process: {} MiB".format(tmp_memory//1024//1024))
         flush_cached_gpu_memory()
         graphs = infer_autoencoder(sp_adj, feature, config, model, repeat=repeat)
@@ -150,7 +150,7 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
         if isinstance(input_data, nx.Graph):
             input_data = [input_data]
         trained_model = eval("{}.train_{}".format(generator, generator))(input_data, config)
-        tmp_memory = get_peak_gpu_memory()
+        tmp_memory = get_peak_gpu_memory(device=config.device)
         print("Peak GPU memory reserved in training process: {} MiB".format(tmp_memory//1024//1024))
         flush_cached_gpu_memory()
         graphs = eval("{}.infer_{}".format(generator, generator))(input_data, config, trained_model)

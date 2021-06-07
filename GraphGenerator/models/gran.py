@@ -18,8 +18,10 @@ from collections import defaultdict
 import torch.nn.functional as F
 import pickle
 import numpy as np
+import random
 from scipy import sparse as sp
-from GraphGenerator.utils.logger import get_logger
+from GraphGenerator.utils.logger import get_logger, setup_logging
+from pprint import pprint
 import os
 import yaml
 from GraphGenerator.utils.arg_utils import edict2dict
@@ -1491,7 +1493,7 @@ def draw_graph_list_separate(G_list,
 
 class GranRunner(object):
 
-    def __init__(self, config):
+    def __init__(self, config, graphs):
         self.config = config
         self.seed = config.seed
         self.dataset_conf = config.dataset
@@ -1499,7 +1501,7 @@ class GranRunner(object):
         self.train_conf = config.train
         self.test_conf = config.test
         self.use_gpu = config.use_gpu
-        self.gpus = config.gpus
+        self.gpus = [config.gpu]
         self.device = config.device
         self.writer = SummaryWriter(config.save_dir)
         self.is_vis = config.test.is_vis
@@ -1516,7 +1518,8 @@ class GranRunner(object):
             self.config.save_dir = self.train_conf.resume_dir
 
         ### load graphs
-        self.graphs = create_graphs(config.dataset.name, data_dir=config.dataset.data_path)
+        # self.graphs = create_graphs(config.dataset.name, data_dir=config.dataset.data_path)
+        self.graphs = graphs
 
         self.train_ratio = config.dataset.train_ratio
         self.dev_ratio = config.dataset.dev_ratio
@@ -1678,7 +1681,7 @@ class GranRunner(object):
                         "NLL Loss @ epoch {:04d} iteration {:08d} = {}".format(epoch + 1, iter_count, train_loss))
 
             # snapshot model
-            if (epoch + 1) % self.train_conf.snapshot_epoch == 0:
+            if (epoch + 1) % self.train_conf.snapshot_epoch == 0 and self.train_conf.save_snapshot:
                 logger.info("Saving Snapshot @ epoch {:04d}".format(epoch + 1))
                 snapshot(model.module if self.use_gpu else model, optimizer, self.config, epoch + 1,
                          scheduler=lr_scheduler)
@@ -1686,9 +1689,9 @@ class GranRunner(object):
         pickle.dump(results, open(os.path.join(self.config.save_dir, 'train_stats.p'), 'wb'))
         self.writer.close()
 
-        return 1
+        return model.module if self.use_gpu else model
 
-    def test(self):
+    def test(self, model=None, evaluation=False):
         self.config.save_dir = self.test_conf.test_model_dir
 
         ### Compute Erdos-Renyi baseline
@@ -1699,9 +1702,10 @@ class GranRunner(object):
                           range(self.num_test_gen)]
         else:
             ### load model
-            model = eval(self.model_conf.name)(self.config)
-            model_file = os.path.join(self.config.save_dir, self.test_conf.test_model_name)
-            load_model(model, model_file, self.device)
+            if model is None:
+                model = eval(self.model_conf.name)(self.config)
+                model_file = os.path.join(self.config.save_dir, self.test_conf.test_model_name)
+                load_model(model, model_file, self.device)
 
             if self.use_gpu:
                 model = nn.DataParallel(model, device_ids=self.gpus).to(self.device)
@@ -1774,7 +1778,8 @@ class GranRunner(object):
                     fname=save_name[:-4],
                     is_single=True,
                     layout='spring')
-
+        if not evaluation:
+            return graphs_gen
         ### Evaluation
         # if self.config.dataset.name in ['lobster']:
         #     acc = eval_acc_lobster_graph(graphs_gen)
@@ -1802,3 +1807,27 @@ class GranRunner(object):
             mmd_num_nodes_test, mmd_degree_test, mmd_clustering_test, mmd_4orbits_test, mmd_spectral_test))
 
         return mmd_degree_dev, mmd_clustering_dev, mmd_4orbits_dev, mmd_spectral_dev, mmd_degree_test, mmd_clustering_test, mmd_4orbits_test, mmd_spectral_test
+
+
+def train_gran(train_graphs, config):
+    random.seed(config.seed)
+    torch.manual_seed(config.seed)
+    np.random.seed(config.seed)
+    # log info
+    log_file = os.path.join(config.save_dir, "log_exp_{}.txt".format(config.run_id))
+    logger = setup_logging("INFO", log_file)
+    logger.info("Writing log file to {}".format(log_file))
+    logger.info("Exp instance id = {}".format(config.run_id))
+    logger.info("Config =")
+    print(">" * 80)
+    pprint(config)
+    print("<" * 80)
+    runner = GranRunner(config, train_graphs)
+    model = runner.train()
+    return model
+
+
+def infer_gran(test_graphs, config, model=None):
+    runner = GranRunner(config, test_graphs)
+    gen_graphs = runner.test(model)
+    return gen_graphs

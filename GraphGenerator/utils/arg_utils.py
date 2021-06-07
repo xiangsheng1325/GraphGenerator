@@ -19,6 +19,7 @@ def get_config(config_file):
 
     save_dir = os.path.join(config.exp_dir, config.exp_name)
     save_name = os.path.join(save_dir, 'config.yaml')
+    config.save_dir = save_dir
     # snapshot hyperparameters
     mkdir(config.exp_dir)
     mkdir(save_dir)
