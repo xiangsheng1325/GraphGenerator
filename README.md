@@ -8,7 +8,7 @@ Toolkit for simulating observed graphs, generating new graphs and evaluating gra
 ## Installation
 ### Environments
 [![Python](https://img.shields.io/badge/Python-v3.6.8-blue?style=plastic)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-v1.8.0-green?style=plastic)](https://pypi.org/project/torch/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-v1.8.1-green?style=plastic)](https://pypi.org/project/torch/)
 [![Tensorflow](https://img.shields.io/badge/Tensorflow-v2.4.0-blue?style=plastic)](https://pypi.org/project/tensorflow/)
 
 If users want to use some deep learning based graph generators, deep learning dependencies are required such as Pytorch or Tensorflow.
@@ -16,7 +16,7 @@ We prefer to use PyTorch as dependency.
 
 **1. Install Pytorch**
 ```bash
-pip install torch==1.8.0+cu111 torchvision==0.9.0+cu111 torchaudio==0.8.0 -f https://download.pytorch.org/whl/torch_stable.html
+pip3 install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
 ```
 **2. Clone and install**
 ```bash
