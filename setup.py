@@ -16,7 +16,12 @@ class CustomDevelop(develop):
         for folder in folders:
             os.chdir(folder)
             subprocess.check_call(['make'])
-
+        folders = [
+            os.path.join(BASEPATH, 'GraphGenerator/evaluate'),
+        ]
+        for folder in folders:
+            os.chdir(folder)
+            subprocess.check_call(['g++', '-O2', '-std=c++11', '-o', 'orca', 'orca.cpp'])
         os.chdir(original_cwd)
 
         super().run()
