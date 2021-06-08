@@ -25,6 +25,7 @@ from pprint import pprint
 import os
 import yaml
 from GraphGenerator.utils.arg_utils import edict2dict
+from GraphGenerator.metrics.memory import get_peak_gpu_memory, flush_cached_gpu_memory
 from GraphGenerator.evaluate.distance import compute_mmd, gaussian_emd, gaussian_tv, gaussian
 from GraphGenerator.evaluate.mmd import degree_stats, orbit_stats_all, spectral_stats, clustering_stats
 from easydict import EasyDict as edict
@@ -1679,6 +1680,8 @@ class GranRunner(object):
                 if iter_count % self.train_conf.display_iter == 0 or iter_count == 1:
                     logger.info(
                         "NLL Loss @ epoch {:04d} iteration {:08d} = {}".format(epoch + 1, iter_count, train_loss))
+                    tmp_memory = get_peak_gpu_memory(device=self.device)
+                    print("Peak GPU memory reserved in training process: {} MiB".format(tmp_memory // 1024 // 1024))
 
             # snapshot model
             if (epoch + 1) % self.train_conf.snapshot_epoch == 0 and self.train_conf.save_snapshot:
@@ -1688,7 +1691,7 @@ class GranRunner(object):
 
         pickle.dump(results, open(os.path.join(self.config.save_dir, 'train_stats.p'), 'wb'))
         self.writer.close()
-
+        flush_cached_gpu_memory()
         return model.module if self.use_gpu else model
 
     def test(self, model=None, evaluation=False):
