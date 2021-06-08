@@ -39,9 +39,9 @@ train:
   lr: 1.0e-4
   lr_decay: 0.3
   lr_decay_epoch: [10000]
-  num_workers: 8
+  num_workers: 0
   max_epoch: 20
-  batch_size: 16
+  batch_size: 1
   display_iter: 10
   snapshot_epoch: 100
   valid_epoch: 50
@@ -55,7 +55,7 @@ train:
 test:
   batch_size: 1
   num_workers: 0
-  num_test_gen: 10 # number of generated samples
+  num_test_gen: 2 # number of generated samples
   is_vis: false
   is_single_plot: false # visualize `num_vis` samples in a single image
   is_test_ER: false # test Erdos-Renyi baseline

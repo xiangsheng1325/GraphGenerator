@@ -44,7 +44,7 @@ def eval_speed(func, args):
 def eval_efficiency(generator, config=None):
     from GraphGenerator.train import train_base as train
     # data_sizes = [100, int(1e+3), int(1e+4), int(1e+5), int(1e+6)]
-    data_sizes = [100]
+    data_sizes = [10000]
     # data_sizes = config.eval.num_nodes
     print("The tested graph size is: {}.".format(data_sizes))
     output_data = []
