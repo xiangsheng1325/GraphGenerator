@@ -1498,5 +1498,10 @@ class Graphsage_Encoder(nn.Module):
         return(nodes_features)
 
 
+def train_graphrnn(train_graphs, config):
+    pass
 
+
+def infer_graphrnn(test_graphs, config, model=None):
+    pass
 
