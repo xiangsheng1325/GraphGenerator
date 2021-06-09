@@ -5,19 +5,19 @@ import os
 from time import time
 
 import edward as ed
+# import edward2 as ed
 import networkx as nx
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.ops.distributions.distributions import Bernoulli, Multinomial, Beta, Dirichlet, Normal
-# from edward.models import Bernoulli, Multinomial, Beta, Dirichlet, PointMass, Normal
-from edward.models import PointMass
+import tensorflow_probability as tfp
+from tensorflow.python.ops.distributions.distributions import Bernoulli, Multinomial, Beta, Dirichlet
+from edward.models.point_mass import distributions_PointMass as PointMass
 from observations import karate
 from sklearn.metrics.cluster import adjusted_rand_score
 
-import utils
 
 CUDA = 0
-ed.set_seed(int(time()))
+# ed.set_seed(int(time()))
 
 
 # ed.set_seed(42)
@@ -85,7 +85,7 @@ def arg_parse():
     parser.add_argument('--samples-per-G', dest='samples', type=int,
                         help='Number of samples for every graph.')
 
-    parser.set_defaults(dataset='community',
+    parser.set_defaults(dataset='grid',
                         K=4,
                         samples=1)
     return parser.parse_args()
@@ -110,29 +110,11 @@ if __name__ == '__main__':
     if prog_args.dataset == 'clique_test':
         X_data = disjoint_cliques_test_graph(4, 7)
         X_dataset.append(X_data)
-    elif prog_args.dataset == 'citeseer':
-        graphs = utils.citeseer_ego()
-        X_dataset = [nx.to_numpy_matrix(g) for g in graphs]
-    elif prog_args.dataset == 'community':
-        graphs = []
-        for i in range(2, 3):
-            for j in range(30, 81):
-                for k in range(10):
-                    graphs.append(utils.caveman_special(i, j, p_edge=0.3))
-        X_dataset = [nx.to_numpy_matrix(g) for g in graphs]
     elif prog_args.dataset == 'grid':
         graphs = []
         for i in range(10, 20):
             for j in range(10, 20):
                 graphs.append(nx.grid_2d_graph(i, j))
-        X_dataset = [nx.to_numpy_matrix(g) for g in graphs]
-    elif prog_args.dataset.startswith('community'):
-        graphs = []
-        num_communities = int(prog_args.dataset[-1])
-        print('Creating dataset with ', num_communities, ' communities')
-        c_sizes = np.random.choice([12, 13, 14, 15, 16, 17], num_communities)
-        for k in range(3000):
-            graphs.append(utils.n_community(c_sizes, p_inter=0.01))
         X_dataset = [nx.to_numpy_matrix(g) for g in graphs]
 
     print('Number of graphs: ', len(X_dataset))
@@ -156,5 +138,3 @@ if __name__ == '__main__':
             for j in range(prog_args.samples):
                 gen_graphs.append(graph_gen_from_blockmodel(B, Zp))
 
-    save_path = '/lfs/local/0/rexy/graph-generation/eval_results/mmsb/'
-    utils.save_graph_list(gen_graphs, os.path.join(save_path, prog_args.dataset + '.dat'))
