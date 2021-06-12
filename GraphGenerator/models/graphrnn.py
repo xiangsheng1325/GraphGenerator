@@ -34,7 +34,7 @@ def binary_cross_entropy_weight(y_pred, y,has_weight=False, weight_length=1, wei
         weight_linear = torch.arange(1,weight_length+1)/weight_length*weight_max
         weight_linear = weight_linear.view(1,weight_length,1).repeat(y.size(0),1,y.size(2))
         weight[:,-1*weight_length:,:] = weight_linear
-        loss = F.binary_cross_entropy(y_pred, y, weight=weight.cuda())
+        loss = F.binary_cross_entropy(y_pred, y, weight=weight.to(y.device))
     else:
         loss = F.binary_cross_entropy(y_pred, y)
     return loss
@@ -43,11 +43,11 @@ def binary_cross_entropy_weight(y_pred, y,has_weight=False, weight_length=1, wei
 def sample_tensor(y,sample=True, thresh=0.5):
     # do sampling
     if sample:
-        y_thresh = Variable(torch.rand(y.size())).cuda()
+        y_thresh = Variable(torch.rand(y.size())).to(y.device)
         y_result = torch.gt(y,y_thresh).float()
     # do max likelihood based on some threshold
     else:
-        y_thresh = Variable(torch.ones(y.size())*thresh).cuda()
+        y_thresh = Variable(torch.ones(y.size())*thresh).to(y.device)
         y_result = torch.gt(y, y_thresh).float()
     return y_result
 
@@ -63,7 +63,7 @@ def gumbel_softmax(logits, temperature, eps=1e-9):
     noise = torch.rand(logits.size())
     noise.add_(eps).log_().neg_()
     noise.add_(eps).log_().neg_()
-    noise = Variable(noise).cuda()
+    noise = Variable(noise).to(logits.device)
 
     x = (logits + noise) / temperature
     x = F.softmax(x)
@@ -89,7 +89,7 @@ def gumbel_sigmoid(logits, temperature):
     # get gumbel noise
     noise = torch.rand(logits.size()) # uniform(0,1)
     noise_logistic = torch.log(noise)-torch.log(1-noise) # logistic(0,1)
-    noise = Variable(noise_logistic).cuda()
+    noise = Variable(noise_logistic).to(logits.device)
 
     x = (logits + noise) / temperature
     x = F.sigmoid(x)
@@ -115,23 +115,23 @@ def sample_sigmoid(y, sample, thresh=0.5, sample_time=2):
     # do sampling
     if sample:
         if sample_time>1:
-            y_result = Variable(torch.rand(y.size(0),y.size(1),y.size(2))).cuda()
+            y_result = Variable(torch.rand(y.size(0),y.size(1),y.size(2))).to(y.device)
             # loop over all batches
             for i in range(y_result.size(0)):
                 # do 'multi_sample' times sampling
                 for j in range(sample_time):
-                    y_thresh = Variable(torch.rand(y.size(1), y.size(2))).cuda()
+                    y_thresh = Variable(torch.rand(y.size(1), y.size(2))).to(y.device)
                     y_result[i] = torch.gt(y[i], y_thresh).float()
                     if (torch.sum(y_result[i]).data>0).any():
                         break
                     # else:
                     #     print('all zero',j)
         else:
-            y_thresh = Variable(torch.rand(y.size(0),y.size(1),y.size(2))).cuda()
+            y_thresh = Variable(torch.rand(y.size(0),y.size(1),y.size(2))).to(y.device)
             y_result = torch.gt(y,y_thresh).float()
     # do max likelihood based on some threshold
     else:
-        y_thresh = Variable(torch.ones(y.size(0), y.size(1), y.size(2))*thresh).cuda()
+        y_thresh = Variable(torch.ones(y.size(0), y.size(1), y.size(2))*thresh).to(y.device)
         y_result = torch.gt(y, y_thresh).float()
     return y_result
 
@@ -150,13 +150,13 @@ def sample_sigmoid_supervised(y_pred, y, current, y_len, sample_time=2):
     # do sigmoid first
     y_pred = F.sigmoid(y_pred)
     # do sampling
-    y_result = Variable(torch.rand(y_pred.size(0), y_pred.size(1), y_pred.size(2))).cuda()
+    y_result = Variable(torch.rand(y_pred.size(0), y_pred.size(1), y_pred.size(2))).to(y.device)
     # loop over all batches
     for i in range(y_result.size(0)):
         # using supervision
         if current<y_len[i]:
             while True:
-                y_thresh = Variable(torch.rand(y_pred.size(1), y_pred.size(2))).cuda()
+                y_thresh = Variable(torch.rand(y_pred.size(1), y_pred.size(2))).to(y.device)
                 y_result[i] = torch.gt(y_pred[i], y_thresh).float()
                 # print('current',current)
                 # print('y_result',y_result[i].data)
@@ -168,7 +168,7 @@ def sample_sigmoid_supervised(y_pred, y, current, y_len, sample_time=2):
         else:
             # do 'multi_sample' times sampling
             for j in range(sample_time):
-                y_thresh = Variable(torch.rand(y_pred.size(1), y_pred.size(2))).cuda()
+                y_thresh = Variable(torch.rand(y_pred.size(1), y_pred.size(2))).to(y.device)
                 y_result[i] = torch.gt(y_pred[i], y_thresh).float()
                 if (torch.sum(y_result[i]).data>0).any():
                     break
@@ -188,7 +188,7 @@ def sample_sigmoid_supervised_simple(y_pred, y, current, y_len, sample_time=2):
     # do sigmoid first
     y_pred = F.sigmoid(y_pred)
     # do sampling
-    y_result = Variable(torch.rand(y_pred.size(0), y_pred.size(1), y_pred.size(2))).cuda()
+    y_result = Variable(torch.rand(y_pred.size(0), y_pred.size(1), y_pred.size(2))).to(y.device)
     # loop over all batches
     for i in range(y_result.size(0)):
         # using supervision
@@ -198,7 +198,7 @@ def sample_sigmoid_supervised_simple(y_pred, y, current, y_len, sample_time=2):
         else:
             # do 'multi_sample' times sampling
             for j in range(sample_time):
-                y_thresh = Variable(torch.rand(y_pred.size(1), y_pred.size(2))).cuda()
+                y_thresh = Variable(torch.rand(y_pred.size(1), y_pred.size(2))).to(y.device)
                 y_result[i] = torch.gt(y_pred[i], y_thresh).float()
                 if (torch.sum(y_result[i]).data>0).any():
                     break
@@ -301,8 +301,8 @@ class GRU_plain(nn.Module):
             if isinstance(m, nn.Linear):
                 m.weight.data = init.xavier_uniform(m.weight.data, gain=nn.init.calculate_gain('relu'))
 
-    def init_hidden(self, batch_size):
-        return Variable(torch.zeros(self.num_layers, batch_size, self.hidden_size)).cuda()
+    def init_hidden(self, batch_size, device='cuda:0'):
+        return Variable(torch.zeros(self.num_layers, batch_size, self.hidden_size)).to(device)
 
     def forward(self, input_raw, pack=False, input_len=None):
         if self.has_input:
@@ -1498,10 +1498,10 @@ class Graphsage_Encoder(nn.Module):
         return(nodes_features)
 
 
-def train_graphrnn(train_graphs, config):
-    pass
+# def train_graphrnn(train_graphs, config):
+#     pass
 
 
-def infer_graphrnn(test_graphs, config, model=None):
-    pass
+# def infer_graphrnn(test_graphs, config, model=None):
+#     pass
 

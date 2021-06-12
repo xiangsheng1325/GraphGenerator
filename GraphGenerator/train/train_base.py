@@ -145,7 +145,7 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
         flush_cached_gpu_memory()
         graphs = infer_autoencoder(sp_adj, feature, config, model, repeat=repeat)
     elif generator in ['graphrnn', 'gran', 'bigg']:
-        import GraphGenerator.models.graphrnn as graphrnn
+        import GraphGenerator.train.train_graphrnn as graphrnn
         import GraphGenerator.models.bigg as bigg
         import GraphGenerator.models.gran as gran
         if isinstance(input_data, nx.Graph):

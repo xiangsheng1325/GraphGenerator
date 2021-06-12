@@ -1,3 +1,6 @@
+import os
+import sys
+
 import networkx as nx
 import numpy as np
 import torch
@@ -24,6 +27,7 @@ import time as tm
 from GraphGenerator.utils.train_utils import *
 from GraphGenerator.models.graphrnn import *
 from GraphGenerator.utils.data_utils import *
+from GraphGenerator.metrics.memory import get_peak_gpu_memory
 # from args import Args
 # import create_graphs
 
@@ -37,22 +41,22 @@ def train_vae_epoch(epoch, args, rnn, output, data_loader,
     for batch_idx, data in enumerate(data_loader):
         rnn.zero_grad()
         output.zero_grad()
-        x_unsorted = data['x'].float()
-        y_unsorted = data['y'].float()
+        x_unsorted = data['x'].astype(float)
+        y_unsorted = data['y'].astype(float)
         y_len_unsorted = data['len']
         y_len_max = max(y_len_unsorted)
         x_unsorted = x_unsorted[:, 0:y_len_max, :]
         y_unsorted = y_unsorted[:, 0:y_len_max, :]
         # initialize lstm hidden state according to batch size
-        rnn.hidden = rnn.init_hidden(batch_size=x_unsorted.size(0))
+        rnn.hidden = rnn.init_hidden(batch_size=x_unsorted.size(0), device=args.device)
 
         # sort input
         y_len,sort_index = torch.sort(y_len_unsorted,0,descending=True)
         y_len = y_len.numpy().tolist()
         x = torch.index_select(x_unsorted,0,sort_index)
         y = torch.index_select(y_unsorted,0,sort_index)
-        x = Variable(x).cuda()
-        y = Variable(y).cuda()
+        x = Variable(x).to(args.device)
+        y = Variable(y).to(args.device)
 
         # if using ground truth to train
         h = rnn(x, pack=True, input_len=y_len)
@@ -86,9 +90,9 @@ def train_vae_epoch(epoch, args, rnn, output, data_loader,
         z_sgm_max = torch.max(z_lsgms.mul(0.5).exp_().data)
 
 
-        if epoch % args.epochs_log==0 and batch_idx==0: # only output first batch's statistics
+        if epoch % args.train.epochs_log==0 and batch_idx==0: # only output first batch's statistics
             print('Epoch: {}/{}, train bce loss: {:.6f}, train kl loss: {:.6f}, graph type: {}, num_layer: {}, hidden: {}'.format(
-                epoch, args.epochs,loss_bce.data[0], loss_kl.data[0], args.graph_type, args.num_layers, args.hidden_size_rnn))
+                epoch, args.train.epochs,loss_bce.data[0], loss_kl.data[0], args.dataset.name, args.model.num_layers, args.model.hidden_size_rnn))
             print('z_mu_mean', z_mu_mean, 'z_mu_min', z_mu_min, 'z_mu_max', z_mu_max, 'z_sgm_mean', z_sgm_mean, 'z_sgm_min', z_sgm_min, 'z_sgm_max', z_sgm_max)
 
         # logging
@@ -105,22 +109,22 @@ def train_vae_epoch(epoch, args, rnn, output, data_loader,
     return loss_sum/(batch_idx+1)
 
 def test_vae_epoch(epoch, args, rnn, output, test_batch_size=16, save_histogram=False, sample_time = 1):
-    rnn.hidden = rnn.init_hidden(test_batch_size)
+    rnn.hidden = rnn.init_hidden(test_batch_size, device=args.device)
     rnn.eval()
     output.eval()
 
     # generate graphs
-    max_num_node = int(args.max_num_node)
-    y_pred = Variable(torch.zeros(test_batch_size, max_num_node, args.max_prev_node)).cuda() # normalized prediction score
-    y_pred_long = Variable(torch.zeros(test_batch_size, max_num_node, args.max_prev_node)).cuda() # discrete prediction
-    x_step = Variable(torch.ones(test_batch_size,1,args.max_prev_node)).cuda()
+    max_num_node = int(args.model.max_num_node)
+    y_pred = Variable(torch.zeros(test_batch_size, max_num_node, args.model.max_prev_node)).to(args.device) # normalized prediction score
+    y_pred_long = Variable(torch.zeros(test_batch_size, max_num_node, args.model.max_prev_node)).to(args.device) # discrete prediction
+    x_step = Variable(torch.ones(test_batch_size,1,args.model.max_prev_node)).to(args.device)
     for i in range(max_num_node):
         h = rnn(x_step)
         y_pred_step, _, _ = output(h)
         y_pred[:, i:i + 1, :] = F.sigmoid(y_pred_step)
         x_step = sample_sigmoid(y_pred_step, sample=True, sample_time=sample_time)
         y_pred_long[:, i:i + 1, :] = x_step
-        rnn.hidden = Variable(rnn.hidden.data).cuda()
+        rnn.hidden = Variable(rnn.hidden.data).to(args.device)
     y_pred_data = y_pred.data
     y_pred_long_data = y_pred_long.data.long()
 
@@ -146,25 +150,25 @@ def test_vae_partial_epoch(epoch, args, rnn, output, data_loader, save_histogram
     output.eval()
     G_pred_list = []
     for batch_idx, data in enumerate(data_loader):
-        x = data['x'].float()
-        y = data['y'].float()
+        x = data['x'].astype(float)
+        y = data['y'].astype(float)
         y_len = data['len']
         test_batch_size = x.size(0)
-        rnn.hidden = rnn.init_hidden(test_batch_size)
+        rnn.hidden = rnn.init_hidden(test_batch_size, device=args.device)
         # generate graphs
-        max_num_node = int(args.max_num_node)
-        y_pred = Variable(torch.zeros(test_batch_size, max_num_node, args.max_prev_node)).cuda() # normalized prediction score
-        y_pred_long = Variable(torch.zeros(test_batch_size, max_num_node, args.max_prev_node)).cuda() # discrete prediction
-        x_step = Variable(torch.ones(test_batch_size,1,args.max_prev_node)).cuda()
+        max_num_node = int(args.model.max_num_node)
+        y_pred = Variable(torch.zeros(test_batch_size, max_num_node, args.model.max_prev_node)).to(args.device) # normalized prediction score
+        y_pred_long = Variable(torch.zeros(test_batch_size, max_num_node, args.model.max_prev_node)).to(args.device) # discrete prediction
+        x_step = Variable(torch.ones(test_batch_size,1,args.model.max_prev_node)).to(args.device)
         for i in range(max_num_node):
             print('finish node',i)
             h = rnn(x_step)
             y_pred_step, _, _ = output(h)
             y_pred[:, i:i + 1, :] = F.sigmoid(y_pred_step)
-            x_step = sample_sigmoid_supervised(y_pred_step, y[:,i:i+1,:].cuda(), current=i, y_len=y_len, sample_time=sample_time)
+            x_step = sample_sigmoid_supervised(y_pred_step, y[:,i:i+1,:].to(args.device), current=i, y_len=y_len, sample_time=sample_time)
 
             y_pred_long[:, i:i + 1, :] = x_step
-            rnn.hidden = Variable(rnn.hidden.data).cuda()
+            rnn.hidden = Variable(rnn.hidden.data).to(args.device)
         y_pred_data = y_pred.data
         y_pred_long_data = y_pred_long.data.long()
 
@@ -186,22 +190,26 @@ def train_mlp_epoch(epoch, args, rnn, output, data_loader,
     for batch_idx, data in enumerate(data_loader):
         rnn.zero_grad()
         output.zero_grad()
-        x_unsorted = data['x'].float()
-        y_unsorted = data['y'].float()
+        # x_unsorted = data['x'].astype(float)
+        x_unsorted = torch.from_numpy(data['x']).float().unsqueeze(0)
+        # y_unsorted = data['y'].astype(float)
+        y_unsorted = torch.from_numpy(data['y']).float().unsqueeze(0)
         y_len_unsorted = data['len']
+        if isinstance(y_len_unsorted, int):
+            y_len_unsorted = torch.tensor([y_len_unsorted], dtype=torch.long)
         y_len_max = max(y_len_unsorted)
         x_unsorted = x_unsorted[:, 0:y_len_max, :]
         y_unsorted = y_unsorted[:, 0:y_len_max, :]
         # initialize lstm hidden state according to batch size
-        rnn.hidden = rnn.init_hidden(batch_size=x_unsorted.size(0))
+        rnn.hidden = rnn.init_hidden(batch_size=x_unsorted.size(0), device=args.device)
 
         # sort input
         y_len,sort_index = torch.sort(y_len_unsorted,0,descending=True)
         y_len = y_len.numpy().tolist()
         x = torch.index_select(x_unsorted,0,sort_index)
         y = torch.index_select(y_unsorted,0,sort_index)
-        x = Variable(x).cuda()
-        y = Variable(y).cuda()
+        x = Variable(x).to(args.device)
+        y = Variable(y).to(args.device)
 
         h = rnn(x, pack=True, input_len=y_len)
         y_pred = output(h)
@@ -219,34 +227,35 @@ def train_mlp_epoch(epoch, args, rnn, output, data_loader,
         scheduler_rnn.step()
 
 
-        if epoch % args.epochs_log==0 and batch_idx==0: # only output first batch's statistics
-            print('Epoch: {}/{}, train loss: {:.6f}, graph type: {}, num_layer: {}, hidden: {}'.format(
-                epoch, args.epochs,loss.data, args.graph_type, args.num_layers, args.hidden_size_rnn))
+        if epoch % args.train.epochs_log==0 and batch_idx==0: # only output first batch's statistics
+            print('Epoch: {}/{}, train loss: {:.6f}, graph type: {}, num_layer: {}, hidden: {}, memory: {} MiB'.format(
+                epoch, args.train.epochs, loss.data, args.dataset.name, args.model.num_layers,
+                args.model.hidden_size_rnn, get_peak_gpu_memory(args.device) // 1024 // 1024))
 
         # logging
-        log_value('loss_'+args.fname, loss.data, epoch*args.batch_ratio+batch_idx)
+        # log_value('loss_'+args.fname, loss.data, epoch*args.batch_ratio+batch_idx)
 
         loss_sum += loss.data
     return loss_sum/(batch_idx+1)
 
 
 def test_mlp_epoch(epoch, args, rnn, output, test_batch_size=16, save_histogram=False,sample_time=1):
-    rnn.hidden = rnn.init_hidden(test_batch_size)
+    rnn.hidden = rnn.init_hidden(test_batch_size, device=args.device)
     rnn.eval()
     output.eval()
 
     # generate graphs
-    max_num_node = int(args.max_num_node)
-    y_pred = Variable(torch.zeros(test_batch_size, max_num_node, args.max_prev_node)).cuda() # normalized prediction score
-    y_pred_long = Variable(torch.zeros(test_batch_size, max_num_node, args.max_prev_node)).cuda() # discrete prediction
-    x_step = Variable(torch.ones(test_batch_size,1,args.max_prev_node)).cuda()
+    max_num_node = int(args.model.max_num_node)
+    y_pred = Variable(torch.zeros(test_batch_size, max_num_node, args.model.max_prev_node)).to(args.device) # normalized prediction score
+    y_pred_long = Variable(torch.zeros(test_batch_size, max_num_node, args.model.max_prev_node)).to(args.device) # discrete prediction
+    x_step = Variable(torch.ones(test_batch_size,1,args.model.max_prev_node)).to(args.device)
     for i in range(max_num_node):
         h = rnn(x_step)
         y_pred_step = output(h)
         y_pred[:, i:i + 1, :] = F.sigmoid(y_pred_step)
         x_step = sample_sigmoid(y_pred_step, sample=True, sample_time=sample_time)
         y_pred_long[:, i:i + 1, :] = x_step
-        rnn.hidden = Variable(rnn.hidden.data).cuda()
+        rnn.hidden = Variable(rnn.hidden.data).to(args.device)
     y_pred_data = y_pred.data
     y_pred_long_data = y_pred_long.data.long()
 
@@ -272,25 +281,25 @@ def test_mlp_partial_epoch(epoch, args, rnn, output, data_loader, save_histogram
     output.eval()
     G_pred_list = []
     for batch_idx, data in enumerate(data_loader):
-        x = data['x'].float()
-        y = data['y'].float()
+        x = data['x'].astype(float)
+        y = data['y'].astype(float)
         y_len = data['len']
         test_batch_size = x.size(0)
-        rnn.hidden = rnn.init_hidden(test_batch_size)
+        rnn.hidden = rnn.init_hidden(test_batch_size, device=args.device)
         # generate graphs
-        max_num_node = int(args.max_num_node)
-        y_pred = Variable(torch.zeros(test_batch_size, max_num_node, args.max_prev_node)).cuda() # normalized prediction score
-        y_pred_long = Variable(torch.zeros(test_batch_size, max_num_node, args.max_prev_node)).cuda() # discrete prediction
-        x_step = Variable(torch.ones(test_batch_size,1,args.max_prev_node)).cuda()
+        max_num_node = int(args.model.max_num_node)
+        y_pred = Variable(torch.zeros(test_batch_size, max_num_node, args.model.max_prev_node)).to(args.device) # normalized prediction score
+        y_pred_long = Variable(torch.zeros(test_batch_size, max_num_node, args.model.max_prev_node)).to(args.device) # discrete prediction
+        x_step = Variable(torch.ones(test_batch_size,1,args.model.max_prev_node)).to(args.device)
         for i in range(max_num_node):
             print('finish node',i)
             h = rnn(x_step)
             y_pred_step = output(h)
             y_pred[:, i:i + 1, :] = F.sigmoid(y_pred_step)
-            x_step = sample_sigmoid_supervised(y_pred_step, y[:,i:i+1,:].cuda(), current=i, y_len=y_len, sample_time=sample_time)
+            x_step = sample_sigmoid_supervised(y_pred_step, y[:,i:i+1,:].to(args.device), current=i, y_len=y_len, sample_time=sample_time)
 
             y_pred_long[:, i:i + 1, :] = x_step
-            rnn.hidden = Variable(rnn.hidden.data).cuda()
+            rnn.hidden = Variable(rnn.hidden.data).to(args.device)
         y_pred_data = y_pred.data
         y_pred_long_data = y_pred_long.data.long()
 
@@ -307,25 +316,25 @@ def test_mlp_partial_simple_epoch(epoch, args, rnn, output, data_loader, save_hi
     output.eval()
     G_pred_list = []
     for batch_idx, data in enumerate(data_loader):
-        x = data['x'].float()
-        y = data['y'].float()
+        x = data['x'].astype(float)
+        y = data['y'].astype(float)
         y_len = data['len']
         test_batch_size = x.size(0)
-        rnn.hidden = rnn.init_hidden(test_batch_size)
+        rnn.hidden = rnn.init_hidden(test_batch_size, device=args.device)
         # generate graphs
-        max_num_node = int(args.max_num_node)
-        y_pred = Variable(torch.zeros(test_batch_size, max_num_node, args.max_prev_node)).cuda() # normalized prediction score
-        y_pred_long = Variable(torch.zeros(test_batch_size, max_num_node, args.max_prev_node)).cuda() # discrete prediction
-        x_step = Variable(torch.ones(test_batch_size,1,args.max_prev_node)).cuda()
+        max_num_node = int(args.model.max_num_node)
+        y_pred = Variable(torch.zeros(test_batch_size, max_num_node, args.model.max_prev_node)).to(args.device) # normalized prediction score
+        y_pred_long = Variable(torch.zeros(test_batch_size, max_num_node, args.model.max_prev_node)).to(args.device) # discrete prediction
+        x_step = Variable(torch.ones(test_batch_size,1,args.model.max_prev_node)).to(args.device)
         for i in range(max_num_node):
             print('finish node',i)
             h = rnn(x_step)
             y_pred_step = output(h)
             y_pred[:, i:i + 1, :] = F.sigmoid(y_pred_step)
-            x_step = sample_sigmoid_supervised_simple(y_pred_step, y[:,i:i+1,:].cuda(), current=i, y_len=y_len, sample_time=sample_time)
+            x_step = sample_sigmoid_supervised_simple(y_pred_step, y[:,i:i+1,:].to(args.device), current=i, y_len=y_len, sample_time=sample_time)
 
             y_pred_long[:, i:i + 1, :] = x_step
-            rnn.hidden = Variable(rnn.hidden.data).cuda()
+            rnn.hidden = Variable(rnn.hidden.data).to(args.device)
         y_pred_data = y_pred.data
         y_pred_long_data = y_pred_long.data.long()
 
@@ -344,22 +353,22 @@ def train_mlp_forward_epoch(epoch, args, rnn, output, data_loader):
     for batch_idx, data in enumerate(data_loader):
         rnn.zero_grad()
         output.zero_grad()
-        x_unsorted = data['x'].float()
-        y_unsorted = data['y'].float()
+        x_unsorted = data['x'].astype(float)
+        y_unsorted = data['y'].astype(float)
         y_len_unsorted = data['len']
         y_len_max = max(y_len_unsorted)
         x_unsorted = x_unsorted[:, 0:y_len_max, :]
         y_unsorted = y_unsorted[:, 0:y_len_max, :]
         # initialize lstm hidden state according to batch size
-        rnn.hidden = rnn.init_hidden(batch_size=x_unsorted.size(0))
+        rnn.hidden = rnn.init_hidden(batch_size=x_unsorted.size(0), device=args.device)
 
         # sort input
         y_len,sort_index = torch.sort(y_len_unsorted,0,descending=True)
         y_len = y_len.numpy().tolist()
         x = torch.index_select(x_unsorted,0,sort_index)
         y = torch.index_select(y_unsorted,0,sort_index)
-        x = Variable(x).cuda()
-        y = Variable(y).cuda()
+        x = Variable(x).to(args.device)
+        y = Variable(y).to(args.device)
 
         h = rnn(x, pack=True, input_len=y_len)
         y_pred = output(h)
@@ -376,9 +385,9 @@ def train_mlp_forward_epoch(epoch, args, rnn, output, data_loader):
             loss += binary_cross_entropy_weight(y_pred[:,j,0:end_idx], y[:,j,0:end_idx])*end_idx
 
 
-        if epoch % args.epochs_log==0 and batch_idx==0: # only output first batch's statistics
+        if epoch % args.train.epochs_log==0 and batch_idx==0: # only output first batch's statistics
             print('Epoch: {}/{}, train loss: {:.6f}, graph type: {}, num_layer: {}, hidden: {}'.format(
-                epoch, args.epochs,loss.data, args.graph_type, args.num_layers, args.hidden_size_rnn))
+                epoch, args.train.epochs,loss.data, args.dataset.name, args.model.num_layers, args.model.hidden_size_rnn))
 
         # logging
         log_value('loss_'+args.fname, loss.data, epoch*args.batch_ratio+batch_idx)
@@ -396,26 +405,26 @@ def train_mlp_forward_epoch(epoch, args, rnn, output, data_loader):
 #     output.eval()
 #     G_pred_list = []
 #     for batch_idx, data in enumerate(data_loader):
-#         x = data['x'].float()
-#         y = data['y'].float()
+#         x = data['x'].astype(float
+#         y = data['y'].astype(float
 #         y_len = data['len']
 #         test_batch_size = x.size(0)
 #         rnn.hidden = rnn.init_hidden(test_batch_size)
 #         # generate graphs
-#         max_num_node = int(args.max_num_node)
-#         y_pred = Variable(torch.zeros(test_batch_size, max_num_node, args.max_prev_node)).cuda() # normalized prediction score
-#         y_pred_long = Variable(torch.zeros(test_batch_size, max_num_node, args.max_prev_node)).cuda() # discrete prediction
-#         x_step = Variable(torch.ones(test_batch_size,1,args.max_prev_node)).cuda()
+#         max_num_node = int(args.model.max_num_node)
+#         y_pred = Variable(torch.zeros(test_batch_size, max_num_node, args.model.max_prev_node)).to(args.device # normalized prediction score
+#         y_pred_long = Variable(torch.zeros(test_batch_size, max_num_node, args.model.max_prev_node)).to(args.device # discrete prediction
+#         x_step = Variable(torch.ones(test_batch_size,1,args.model.max_prev_node)).to(args.device
 #         for i in range(max_num_node):
 #             # 1 back up hidden state
-#             hidden_prev = Variable(rnn.hidden.data).cuda()
+#             hidden_prev = Variable(rnn.hidden.data).to(args.device
 #             h = rnn(x_step)
 #             y_pred_step = output(h)
 #             y_pred[:, i:i + 1, :] = F.sigmoid(y_pred_step)
-#             x_step = sample_sigmoid_supervised(y_pred_step, y[:,i:i+1,:].cuda(), current=i, y_len=y_len, sample_time=sample_time)
+#             x_step = sample_sigmoid_supervised(y_pred_step, y[:,i:i+1,:].to(args.device, current=i, y_len=y_len, sample_time=sample_time)
 #             y_pred_long[:, i:i + 1, :] = x_step
 #
-#             rnn.hidden = Variable(rnn.hidden.data).cuda()
+#             rnn.hidden = Variable(rnn.hidden.data).to(args.device
 #
 #             print('finish node', i)
 #         y_pred_data = y_pred.data
@@ -438,14 +447,18 @@ def train_rnn_epoch(epoch, args, rnn, output, data_loader,
     for batch_idx, data in enumerate(data_loader):
         rnn.zero_grad()
         output.zero_grad()
-        x_unsorted = data['x'].float()
-        y_unsorted = data['y'].float()
+        # x_unsorted = data['x'].astype(float)
+        x_unsorted = torch.from_numpy(data['x']).float().unsqueeze(0)
+        # y_unsorted = data['y'].astype(float)
+        y_unsorted = torch.from_numpy(data['y']).float().unsqueeze(0)
         y_len_unsorted = data['len']
+        if isinstance(y_len_unsorted, int):
+            y_len_unsorted = torch.tensor([y_len_unsorted], dtype=torch.long)
         y_len_max = max(y_len_unsorted)
         x_unsorted = x_unsorted[:, 0:y_len_max, :]
         y_unsorted = y_unsorted[:, 0:y_len_max, :]
         # initialize lstm hidden state according to batch size
-        rnn.hidden = rnn.init_hidden(batch_size=x_unsorted.size(0))
+        rnn.hidden = rnn.init_hidden(batch_size=x_unsorted.size(0), device=args.device)
         # output.hidden = output.init_hidden(batch_size=x_unsorted.size(0)*x_unsorted.size(1))
 
         # sort input
@@ -472,10 +485,10 @@ def train_rnn_epoch(epoch, args, rnn, output, data_loader,
             count_temp = np.sum(output_y_len_bin[i:]) # count how many y_len is above i
             output_y_len.extend([min(i,y.size(2))]*count_temp) # put them in output_y_len; max value should not exceed y.size(2)
         # pack into variable
-        x = Variable(x).cuda()
-        y = Variable(y).cuda()
-        output_x = Variable(output_x).cuda()
-        output_y = Variable(output_y).cuda()
+        x = Variable(x).to(args.device)
+        y = Variable(y).to(args.device)
+        output_x = Variable(output_x).to(args.device)
+        output_y = Variable(output_y).to(args.device)
         # print(output_y_len)
         # print('len',len(output_y_len))
         # print('y',y.size())
@@ -487,9 +500,9 @@ def train_rnn_epoch(epoch, args, rnn, output, data_loader,
         h = pack_padded_sequence(h,y_len,batch_first=True).data # get packed hidden vector
         # reverse h
         idx = [i for i in range(h.size(0) - 1, -1, -1)]
-        idx = Variable(torch.LongTensor(idx)).cuda()
+        idx = Variable(torch.LongTensor(idx)).to(args.device)
         h = h.index_select(0, idx)
-        hidden_null = Variable(torch.zeros(args.num_layers-1, h.size(0), h.size(1))).cuda()
+        hidden_null = Variable(torch.zeros(args.model.num_layers-1, h.size(0), h.size(1))).to(args.device)
         output.hidden = torch.cat((h.view(1,h.size(0),h.size(1)),hidden_null),dim=0) # num_layers, batch_size, hidden_size
         y_pred = output(output_x, pack=True, input_len=output_y_len)
         y_pred = F.sigmoid(y_pred)
@@ -508,13 +521,14 @@ def train_rnn_epoch(epoch, args, rnn, output, data_loader,
         scheduler_rnn.step()
 
 
-        if epoch % args.epochs_log==0 and batch_idx==0: # only output first batch's statistics
-            print('Epoch: {}/{}, train loss: {:.6f}, graph type: {}, num_layer: {}, hidden: {}'.format(
-                epoch, args.epochs,loss.data, args.graph_type, args.num_layers, args.hidden_size_rnn))
+        if epoch % args.train.epochs_log==0 and batch_idx==0: # only output first batch's statistics
+            print('Epoch: {}/{}, train loss: {:.6f}, graph type: {}, num_layer: {}, hidden: {}, memory: {} MiB'.format(
+                epoch, args.train.epochs,loss.data, args.dataset.name, args.model.num_layers,
+                args.model.hidden_size_rnn, get_peak_gpu_memory(args.device)//1024//1024))
 
         # logging
         # log_value('loss_'+args.fname, loss.data, epoch*args.batch_ratio+batch_idx)
-        log_value('loss_' + args.fname, loss.data, epoch * args.batch_ratio + batch_idx)
+        # log_value('loss_' + args.fname, loss.data, epoch * args.batch_ratio + batch_idx)
         feature_dim = y.size(1)*y.size(2)
         # loss_sum += loss.data*feature_dim
         loss_sum += loss.data * feature_dim
@@ -523,29 +537,29 @@ def train_rnn_epoch(epoch, args, rnn, output, data_loader,
 
 
 def test_rnn_epoch(epoch, args, rnn, output, test_batch_size=16):
-    rnn.hidden = rnn.init_hidden(test_batch_size)
+    rnn.hidden = rnn.init_hidden(test_batch_size, device=args.device)
     rnn.eval()
     output.eval()
 
     # generate graphs
-    max_num_node = int(args.max_num_node)
-    y_pred_long = Variable(torch.zeros(test_batch_size, max_num_node, args.max_prev_node)).cuda() # discrete prediction
-    x_step = Variable(torch.ones(test_batch_size,1,args.max_prev_node)).cuda()
+    max_num_node = int(args.model.max_num_node)
+    y_pred_long = Variable(torch.zeros(test_batch_size, max_num_node, args.model.max_prev_node)).to(args.device) # discrete prediction
+    x_step = Variable(torch.ones(test_batch_size,1,args.model.max_prev_node)).to(args.device)
     for i in range(max_num_node):
         h = rnn(x_step)
         # output.hidden = h.permute(1,0,2)
-        hidden_null = Variable(torch.zeros(args.num_layers - 1, h.size(0), h.size(2))).cuda()
+        hidden_null = Variable(torch.zeros(args.model.num_layers - 1, h.size(0), h.size(2))).to(args.device)
         output.hidden = torch.cat((h.permute(1,0,2), hidden_null),
                                   dim=0)  # num_layers, batch_size, hidden_size
-        x_step = Variable(torch.zeros(test_batch_size,1,args.max_prev_node)).cuda()
-        output_x_step = Variable(torch.ones(test_batch_size,1,1)).cuda()
-        for j in range(min(args.max_prev_node,i+1)):
+        x_step = Variable(torch.zeros(test_batch_size,1,args.model.max_prev_node)).to(args.device)
+        output_x_step = Variable(torch.ones(test_batch_size,1,1)).to(args.device)
+        for j in range(min(args.model.max_prev_node,i+1)):
             output_y_pred_step = output(output_x_step)
             output_x_step = sample_sigmoid(output_y_pred_step, sample=True, sample_time=1)
             x_step[:,:,j:j+1] = output_x_step
-            output.hidden = Variable(output.hidden.data).cuda()
+            output.hidden = Variable(output.hidden.data).to(args.device)
         y_pred_long[:, i:i + 1, :] = x_step
-        rnn.hidden = Variable(rnn.hidden.data).cuda()
+        rnn.hidden = Variable(rnn.hidden.data).to(args.device)
     y_pred_long_data = y_pred_long.data.long()
 
     # save graphs as pickle
@@ -567,14 +581,14 @@ def train_rnn_forward_epoch(epoch, args, rnn, output, data_loader):
     for batch_idx, data in enumerate(data_loader):
         rnn.zero_grad()
         output.zero_grad()
-        x_unsorted = data['x'].float()
-        y_unsorted = data['y'].float()
+        x_unsorted = data['x'].astype(float)
+        y_unsorted = data['y'].astype(float)
         y_len_unsorted = data['len']
         y_len_max = max(y_len_unsorted)
         x_unsorted = x_unsorted[:, 0:y_len_max, :]
         y_unsorted = y_unsorted[:, 0:y_len_max, :]
         # initialize lstm hidden state according to batch size
-        rnn.hidden = rnn.init_hidden(batch_size=x_unsorted.size(0))
+        rnn.hidden = rnn.init_hidden(batch_size=x_unsorted.size(0), device=args.device)
         # output.hidden = output.init_hidden(batch_size=x_unsorted.size(0)*x_unsorted.size(1))
 
         # sort input
@@ -601,10 +615,10 @@ def train_rnn_forward_epoch(epoch, args, rnn, output, data_loader):
             count_temp = np.sum(output_y_len_bin[i:]) # count how many y_len is above i
             output_y_len.extend([min(i,y.size(2))]*count_temp) # put them in output_y_len; max value should not exceed y.size(2)
         # pack into variable
-        x = Variable(x).cuda()
-        y = Variable(y).cuda()
-        output_x = Variable(output_x).cuda()
-        output_y = Variable(output_y).cuda()
+        x = Variable(x).to(args.device)
+        y = Variable(y).to(args.device)
+        output_x = Variable(output_x).to(args.device)
+        output_y = Variable(output_y).to(args.device)
         # print(output_y_len)
         # print('len',len(output_y_len))
         # print('y',y.size())
@@ -616,9 +630,9 @@ def train_rnn_forward_epoch(epoch, args, rnn, output, data_loader):
         h = pack_padded_sequence(h,y_len,batch_first=True).data # get packed hidden vector
         # reverse h
         idx = [i for i in range(h.size(0) - 1, -1, -1)]
-        idx = Variable(torch.LongTensor(idx)).cuda()
+        idx = Variable(torch.LongTensor(idx)).to(args.device)
         h = h.index_select(0, idx)
-        hidden_null = Variable(torch.zeros(args.num_layers-1, h.size(0), h.size(1))).cuda()
+        hidden_null = Variable(torch.zeros(args.model.num_layers-1, h.size(0), h.size(1))).to(args.device)
         output.hidden = torch.cat((h.view(1,h.size(0),h.size(1)),hidden_null),dim=0) # num_layers, batch_size, hidden_size
         y_pred = output(output_x, pack=True, input_len=output_y_len)
         y_pred = F.sigmoid(y_pred)
@@ -631,9 +645,9 @@ def train_rnn_forward_epoch(epoch, args, rnn, output, data_loader):
         loss = binary_cross_entropy_weight(y_pred, output_y)
 
 
-        if epoch % args.epochs_log==0 and batch_idx==0: # only output first batch's statistics
+        if epoch % args.train.epochs_log==0 and batch_idx==0: # only output first batch's statistics
             print('Epoch: {}/{}, train loss: {:.6f}, graph type: {}, num_layer: {}, hidden: {}'.format(
-                epoch, args.epochs,loss.data, args.graph_type, args.num_layers, args.hidden_size_rnn))
+                epoch, args.train.epochs,loss.data, args.dataset.name, args.model.num_layers, args.model.hidden_size_rnn))
 
         # logging
         log_value('loss_'+args.fname, loss.data, epoch*args.batch_ratio+batch_idx)
@@ -667,37 +681,37 @@ def train(args, dataset_train, rnn, output):
     scheduler_output = MultiStepLR(optimizer_output, milestones=args.milestones, gamma=args.lr_rate)
 
     # start main loop
-    time_all = np.zeros(args.epochs)
-    while epoch<=args.epochs:
+    time_all = np.zeros(args.train.epochs)
+    while epoch<=args.train.epochs:
         time_start = tm.time()
         print("epoch {} ({})".format(epoch,time_start))
         # train
-        if 'GraphRNN_VAE' in args.note:
+        if 'GraphRNN_VAE' in args.model.name:
             train_vae_epoch(epoch, args, rnn, output, dataset_train,
                             optimizer_rnn, optimizer_output,
                             scheduler_rnn, scheduler_output)
-        elif 'GraphRNN_MLP' in args.note:
+        elif 'GraphRNN_MLP' in args.model.name:
             train_mlp_epoch(epoch, args, rnn, output, dataset_train,
                             optimizer_rnn, optimizer_output,
                             scheduler_rnn, scheduler_output)
-        elif 'GraphRNN_RNN' in args.note:
+        elif 'GraphRNN_RNN' in args.model.name:
             train_rnn_epoch(epoch, args, rnn, output, dataset_train,
                             optimizer_rnn, optimizer_output,
                             scheduler_rnn, scheduler_output)
         time_end = tm.time()
         time_all[epoch - 1] = time_end - time_start
         # test
-        if epoch % args.epochs_test == 0 and epoch>=args.epochs_test_start:
+        if epoch % args.train.epochs_test == 0 and epoch>=args.train.epochs_test_start:
             for sample_time in range(1,4):
                 G_pred = []
                 while len(G_pred)<args.test_total_size:
-                    if 'GraphRNN_VAE' in args.note:
+                    if 'GraphRNN_VAE' in args.model.name:
                         tmpname = 'graphrnn-vae'
                         G_pred_step = test_vae_epoch(epoch, args, rnn, output, test_batch_size=args.test_batch_size,sample_time=sample_time)
-                    elif 'GraphRNN_MLP' in args.note:
+                    elif 'GraphRNN_MLP' in args.model.name:
                         tmpname = 'graphrnn-mlp'
                         G_pred_step = test_mlp_epoch(epoch, args, rnn, output, test_batch_size=args.test_batch_size,sample_time=sample_time)
-                    elif 'GraphRNN_RNN' in args.note:
+                    elif 'GraphRNN_RNN' in args.model.name:
                         tmpname = 'graphrnn-rnn'
                         G_pred_step = test_rnn_epoch(epoch, args, rnn, output, test_batch_size=args.test_batch_size)
                     G_pred.extend(G_pred_step)
@@ -707,17 +721,17 @@ def train(args, dataset_train, rnn, output):
                 # save_graph_list(G_pred, fname)
                 # tuning experiment
                 fname = '/home/xiangsheng/venv/ggen/ggen/generators/result/tuning/rnn'+ tmpname[-3:] +'-emb/'\
-                        + args.graph_type + '_to_' + tmpname + '_' + str(sample_time)\
-                        + '_emb' + str(args.hidden_size_rnn) + '.dat'
+                        + args.dataset.name + '_to_' + tmpname + '_' + str(sample_time)\
+                        + '_emb' + str(args.model.hidden_size_rnn) + '.dat'
                 save_graph_list(G_pred, fname)
-                if 'GraphRNN_RNN' in args.note:
+                if 'GraphRNN_RNN' in args.model.name:
                     break
             print('test done, graphs saved')
 
 
         # save model checkpoint
         if args.save:
-            if epoch % args.epochs_save == 0:
+            if epoch % args.train.epochs_save == 0:
                 fname = args.model_save_path + args.fname + 'lstm_' + str(epoch) + '.dat'
                 torch.save(rnn.state_dict(), fname)
                 fname = args.model_save_path + args.fname + 'output_' + str(epoch) + '.dat'
@@ -737,9 +751,9 @@ def train_graph_completion(args, dataset_test, rnn, output):
     print('model loaded!, epoch: {}'.format(args.load_epoch))
 
     for sample_time in range(1,4):
-        if 'GraphRNN_MLP' in args.note:
+        if 'GraphRNN_MLP' in args.model.name:
             G_pred = test_mlp_partial_simple_epoch(epoch, args, rnn, output, dataset_test,sample_time=sample_time)
-        if 'GraphRNN_VAE' in args.note:
+        if 'GraphRNN_VAE' in args.model.name:
             G_pred = test_vae_partial_epoch(epoch, args, rnn, output, dataset_test,sample_time=sample_time)
         # save graphs
         fname = args.graph_save_path + args.fname_pred + str(epoch) +'_'+str(sample_time) + 'graph_completion.dat'
@@ -756,15 +770,15 @@ def train_nll(args, dataset_train, dataset_test, rnn, output,graph_validate_len,
 
     epoch = args.load_epoch
     print('model loaded!, epoch: {}'.format(args.load_epoch))
-    fname_output = args.nll_save_path + args.note + '_' + args.graph_type + '.csv'
+    fname_output = args.nll_save_path + args.model.name + '_' + args.dataset.name + '.csv'
     with open(fname_output, 'w+') as f:
         f.write(str(graph_validate_len)+','+str(graph_test_len)+'\n')
         f.write('train,test\n')
         for iter in range(max_iter):
-            if 'GraphRNN_MLP' in args.note:
+            if 'GraphRNN_MLP' in args.model.name:
                 nll_train = train_mlp_forward_epoch(epoch, args, rnn, output, dataset_train)
                 nll_test = train_mlp_forward_epoch(epoch, args, rnn, output, dataset_test)
-            if 'GraphRNN_RNN' in args.note:
+            if 'GraphRNN_RNN' in args.model.name:
                 nll_train = train_rnn_forward_epoch(epoch, args, rnn, output, dataset_train)
                 nll_test = train_rnn_forward_epoch(epoch, args, rnn, output, dataset_test)
             print('train',nll_train,'test',nll_test)
@@ -811,8 +825,8 @@ def main_train(args):
 
     # if use pre-saved graphs
     # dir_input = "/dfs/scratch0/jiaxuany0/graphs/"
-    # fname_test = dir_input + args.note + '_' + args.graph_type + '_' + str(args.num_layers) + '_' + str(
-    #     args.hidden_size_rnn) + '_test_' + str(0) + '.dat'
+    # fname_test = dir_input + args.model.name + '_' + args.dataset.name + '_' + str(args.model.num_layers) + '_' + str(
+    #     args.model.hidden_size_rnn) + '_test_' + str(0) + '.dat'
     # graphs = load_graph_list(fname_test, is_real=True)
     # graphs_test = graphs[int(0.8 * graphs_len):]
     # graphs_train = graphs[0:int(0.8 * graphs_len)]
@@ -830,16 +844,16 @@ def main_train(args):
     # graph_test_len /= len(graphs_test)
     print('graph_test_len', graph_test_len)
 
-    args.max_num_node = max([graphs[i].number_of_nodes() for i in range(len(graphs))])
+    args.model.max_num_node = max([graphs[i].number_of_nodes() for i in range(len(graphs))])
     max_num_edge = max([graphs[i].number_of_edges() for i in range(len(graphs))])
     min_num_edge = min([graphs[i].number_of_edges() for i in range(len(graphs))])
 
-    # args.max_num_node = 2000
+    # args.model.max_num_node = 2000
     # show graphs statistics
     print('total graph num: {}, training set: {}'.format(len(graphs), len(graphs_train)))
-    print('max number node: {}'.format(args.max_num_node))
+    print('max number node: {}'.format(args.model.max_num_node))
     print('max/min number edge: {}; {}'.format(max_num_edge, min_num_edge))
-    print('max previous node: {}'.format(args.max_prev_node))
+    print('max previous node: {}'.format(args.model.max_prev_node))
 
     # save ground truth graphs
     ## To get train and test set, after loading you need to manually slice
@@ -860,17 +874,17 @@ def main_train(args):
     #         graph.remove_edge(edge[0],edge[1])
 
     ### dataset initialization
-    if 'nobfs' in args.note:
+    if 'nobfs' in args.model.name:
         print('nobfs')
-        dataset = Graph_sequence_sampler_pytorch_nobfs(graphs_train, max_num_node=args.max_num_node)
-        args.max_prev_node = args.max_num_node - 1
-    if 'barabasi_noise' in args.graph_type:
+        dataset = Graph_sequence_sampler_pytorch_nobfs(graphs_train, max_num_node=args.model.max_num_node)
+        args.model.max_prev_node = args.model.max_num_node - 1
+    if 'barabasi_noise' in args.dataset.name:
         print('barabasi_noise')
-        dataset = Graph_sequence_sampler_pytorch_canonical(graphs_train, max_prev_node=args.max_prev_node)
-        args.max_prev_node = args.max_num_node - 1
+        dataset = Graph_sequence_sampler_pytorch_canonical(graphs_train, max_prev_node=args.model.max_prev_node)
+        args.model.max_prev_node = args.model.max_num_node - 1
     else:
-        dataset = Graph_sequence_sampler_pytorch(graphs_train, max_prev_node=args.max_prev_node,
-                                                 max_num_node=args.max_num_node)
+        dataset = Graph_sequence_sampler_pytorch(graphs_train, max_prev_node=args.model.max_prev_node,
+                                                 max_num_node=args.model.max_num_node)
     sample_strategy = torch.utils.data.sampler.WeightedRandomSampler([1.0 / len(dataset) for i in range(len(dataset))],
                                                                      num_samples=args.batch_size * args.batch_ratio,
                                                                      replacement=True)
@@ -879,29 +893,169 @@ def main_train(args):
 
     ### model initialization
     ## Graph RNN VAE model
-    # lstm = LSTM_plain(input_size=args.max_prev_node, embedding_size=args.embedding_size_lstm,
-    #                   hidden_size=args.hidden_size, num_layers=args.num_layers).cuda()
+    # lstm = LSTM_plain(input_size=args.model.max_prev_node, embedding_size=args.embedding_size_lstm,
+    #                   hidden_size=args.hidden_size, num_layers=args.model.num_layers).to(args.device
 
-    if 'GraphRNN_VAE_conditional' in args.note:
-        rnn = GRU_plain(input_size=args.max_prev_node, embedding_size=args.embedding_size_rnn,
-                        hidden_size=args.hidden_size_rnn, num_layers=args.num_layers, has_input=True,
-                        has_output=False).cuda()
-        output = MLP_VAE_conditional_plain(h_size=args.hidden_size_rnn, embedding_size=args.embedding_size_output,
-                                           y_size=args.max_prev_node).cuda()
-    elif 'GraphRNN_MLP' in args.note:
-        rnn = GRU_plain(input_size=args.max_prev_node, embedding_size=args.embedding_size_rnn,
-                        hidden_size=args.hidden_size_rnn, num_layers=args.num_layers, has_input=True,
-                        has_output=False).cuda()
-        output = MLP_plain(h_size=args.hidden_size_rnn, embedding_size=args.embedding_size_output,
-                           y_size=args.max_prev_node).cuda()
-    elif 'GraphRNN_RNN' in args.note:
-        rnn = GRU_plain(input_size=args.max_prev_node, embedding_size=args.embedding_size_rnn,
-                        hidden_size=args.hidden_size_rnn, num_layers=args.num_layers, has_input=True,
-                        has_output=True, output_size=args.hidden_size_rnn_output).cuda()
-        output = GRU_plain(input_size=1, embedding_size=args.embedding_size_rnn_output,
-                           hidden_size=args.hidden_size_rnn_output, num_layers=args.num_layers, has_input=True,
-                           has_output=True, output_size=1).cuda()
+    if 'GraphRNN_VAE_conditional' in args.model.name:
+        rnn = GRU_plain(input_size=args.model.max_prev_node, embedding_size=args.model.embedding_size_rnn,
+                        hidden_size=args.model.hidden_size_rnn, num_layers=args.model.num_layers, has_input=True,
+                        has_output=False).to(args.device)
+        output = MLP_VAE_conditional_plain(h_size=args.model.hidden_size_rnn, embedding_size=args.embedding_size_output,
+                                           y_size=args.model.max_prev_node).to(args.device)
+    elif 'GraphRNN_MLP' in args.model.name:
+        rnn = GRU_plain(input_size=args.model.max_prev_node, embedding_size=args.model.embedding_size_rnn,
+                        hidden_size=args.model.hidden_size_rnn, num_layers=args.model.num_layers, has_input=True,
+                        has_output=False).to(args.device)
+        output = MLP_plain(h_size=args.model.hidden_size_rnn, embedding_size=args.embedding_size_output,
+                           y_size=args.model.max_prev_node).to(args.device)
+    elif 'GraphRNN_RNN' in args.model.name:
+        rnn = GRU_plain(input_size=args.model.max_prev_node, embedding_size=args.model.embedding_size_rnn,
+                        hidden_size=args.model.hidden_size_rnn, num_layers=args.model.num_layers, has_input=True,
+                        has_output=True, output_size=args.model.hidden_size_rnn_output).to(args.device)
+        output = GRU_plain(input_size=1, embedding_size=args.model.embedding_size_rnn_output,
+                           hidden_size=args.model.hidden_size_rnn_output, num_layers=args.model.num_layers, has_input=True,
+                           has_output=True, output_size=1).to(args.device)
 
     ### start training
     train(args, dataset_loader, rnn, output)
 
+
+def train_graphrnn(train_graphs, args):
+    graphs_len = len(train_graphs)
+    args.model.max_num_node = max([train_graphs[i].number_of_nodes() for i in range(graphs_len)])
+    if not isinstance(args.model.max_prev_node, int):
+        args.model.max_prev_node = args.model.max_num_node
+    max_num_edge = max([train_graphs[i].number_of_edges() for i in range(graphs_len)])
+    min_num_edge = min([train_graphs[i].number_of_edges() for i in range(graphs_len)])
+
+    # show graphs statistics
+    print('total graph num: {}'.format(graphs_len))
+    print('max number node: {}'.format(args.model.max_num_node))
+    print('max/min number edge: {}; {}'.format(max_num_edge, min_num_edge))
+    print('max previous node: {}'.format(args.model.max_prev_node))
+    dataset = Graph_sequence_sampler_pytorch(train_graphs, max_prev_node=args.model.max_prev_node,
+                                             max_num_node=args.model.max_num_node)
+    sample_strategy = torch.utils.data.sampler.WeightedRandomSampler([1.0 / len(dataset) for i in range(len(dataset))],
+                                                                     num_samples=args.train.batch_size * args.train.batch_ratio,
+                                                                     replacement=True)
+    dataset_loader = torch.utils.data.DataLoader(dataset, batch_size=args.train.batch_size, num_workers=args.dataset.num_workers,
+                                                 sampler=sample_strategy)
+
+    if 'GraphRNN_MLP' in args.model.name:
+        rnn = GRU_plain(input_size=args.model.max_prev_node, embedding_size=args.model.embedding_size_rnn,
+                        hidden_size=args.model.hidden_size_rnn, num_layers=args.model.num_layers, has_input=True,
+                        has_output=False).to(args.device)
+        output = MLP_plain(h_size=args.model.hidden_size_rnn, embedding_size=args.model.embedding_size_output,
+                           y_size=args.model.max_prev_node).to(args.device)
+    elif 'GraphRNN_RNN' in args.model.name:
+        rnn = GRU_plain(input_size=args.model.max_prev_node, embedding_size=args.model.embedding_size_rnn,
+                        hidden_size=args.model.hidden_size_rnn, num_layers=args.model.num_layers, has_input=True,
+                        has_output=True, output_size=args.model.hidden_size_rnn_output).to(args.device)
+        output = GRU_plain(input_size=1, embedding_size=args.model.embedding_size_rnn_output,
+                           hidden_size=args.model.hidden_size_rnn_output, num_layers=args.model.num_layers, has_input=True,
+                           has_output=True, output_size=1).to(args.device)
+    else:
+        print("Wrong model name! please check the model name of `config/graphrnn.yaml`.")
+        sys.exit(1)
+    if args.train.resume:
+        fname = os.path.join(args.exp_dir,
+                             args.exp_name,
+                             '{}_{}_{}_{}_rnn_{}.dat'.format(args.model.name,
+                                                         args.dataset.name,
+                                                         args.model.num_layers,
+                                                         args.model.hidden_size_rnn,
+                                                         args.train.resume_epoch))
+        # fname = args.model_save_path + args.fname + 'lstm_' + str(args.load_epoch) + '.dat'
+        rnn.load_state_dict(torch.load(fname))
+        fname = os.path.join(args.exp_dir,
+                             args.exp_name,
+                             '{}_{}_{}_{}_output_{}.dat'.format(args.model.name,
+                                                                args.dataset.name,
+                                                                args.model.num_layers,
+                                                                args.model.hidden_size_rnn,
+                                                                args.train.resume_epoch))
+        # fname = args.model_save_path + args.fname + 'output_' + str(args.load_epoch) + '.dat'
+        output.load_state_dict(torch.load(fname))
+
+        args.train.lr = 0.00001
+        epoch = args.train.resume_epoch
+        print('model loaded!, lr: {}'.format(args.train.lr))
+    else:
+        epoch = 1
+
+    # initialize optimizer
+    optimizer_rnn = optim.Adam(list(rnn.parameters()), lr=args.train.lr)
+    optimizer_output = optim.Adam(list(output.parameters()), lr=args.train.lr)
+
+    scheduler_rnn = MultiStepLR(optimizer_rnn, milestones=args.train.milestones, gamma=args.train.lr_rate)
+    scheduler_output = MultiStepLR(optimizer_output, milestones=args.train.milestones, gamma=args.train.lr_rate)
+
+    # start main loop
+    time_all = np.zeros(args.train.epochs)
+    while epoch <= args.train.epochs:
+        time_start = tm.time()
+        # train
+        if 'GraphRNN_MLP' in args.model.name:
+            train_mlp_epoch(epoch, args, rnn, output, dataset,
+                            optimizer_rnn, optimizer_output,
+                            scheduler_rnn, scheduler_output)
+        elif 'GraphRNN_RNN' in args.model.name:
+            train_rnn_epoch(epoch, args, rnn, output, dataset,
+                            optimizer_rnn, optimizer_output,
+                            scheduler_rnn, scheduler_output)
+        time_end = tm.time()
+        time_all[epoch - 1] = time_end - time_start
+        # test
+        if epoch % args.train.validate_epoch == 0 and epoch >= args.train.validate_epoch:
+            for sample_time in range(1, 4):
+                G_pred = []
+                while len(G_pred) < args.train.validate_sample:
+                    if 'GraphRNN_MLP' in args.model.name:
+                        G_pred_step = test_mlp_epoch(epoch, args, rnn, output, test_batch_size=args.test.batch_size,
+                                                     sample_time=sample_time)
+                    elif 'GraphRNN_RNN' in args.model.name:
+                        G_pred_step = test_rnn_epoch(epoch, args, rnn, output, test_batch_size=args.test.batch_size)
+                    G_pred.extend(G_pred_step)
+                # save graphs
+                fname = os.path.join(args.exp_dir,
+                                     args.exp_name,
+                                     '{}_{}_{}_{}_pred_{}_{}.dat'.format(args.model.name,
+                                                                         args.dataset.name,
+                                                                         args.model.num_layers,
+                                                                         args.model.hidden_size_rnn,
+                                                                         epoch,
+                                                                         sample_time))
+                # fname = args.graph_save_path + args.fname_pred + str(epoch) + '_' + str(sample_time) + '.dat'
+                save_graph_list(G_pred, fname)
+                if 'GraphRNN_RNN' in args.model.name:
+                    break
+            print('test done, graphs saved')
+
+        # save model checkpoint
+        if args.train.save:
+            if epoch % args.train.save_epoch_by == 0 and epoch >=1:
+                fname = os.path.join(args.exp_dir,
+                                     args.exp_name,
+                                     '{}_{}_{}_{}_rnn_{}.dat'.format(args.model.name,
+                                                                     args.dataset.name,
+                                                                     args.model.num_layers,
+                                                                     args.model.hidden_size_rnn,
+                                                                     epoch))
+                # fname = args.model_save_path + args.fname + 'lstm_' + str(epoch) + '.dat'
+                torch.save(rnn.state_dict(), fname)
+                fname = os.path.join(args.exp_dir,
+                                     args.exp_name,
+                                     '{}_{}_{}_{}_output_{}.dat'.format(args.model.name,
+                                                                        args.dataset.name,
+                                                                        args.model.num_layers,
+                                                                        args.model.hidden_size_rnn,
+                                                                        epoch))
+                # fname = args.model_save_path + args.fname + 'output_' + str(epoch) + '.dat'
+                torch.save(output.state_dict(), fname)
+        epoch += 1
+    return rnn, output
+
+
+def infer_graphrnn(test_graphs, args, model=None):
+    rnn, output = model
+    print("### Infer!")
