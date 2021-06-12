@@ -1,0 +1,29 @@
+---
+exp_name: SBMGNN
+exp_dir: exp/SBMGNN
+seed: 1234
+gpu_to_use: 1
+device: cuda:1
+dataset:
+  name: top10
+  data_path: data/
+  features: false
+model:
+  name: SBMGNN
+  hidden: [64, 50]
+  g_hidden: 32
+  deep_decoder: 1
+  dropout: 0.5
+  alpha0: 10.
+  temp_prior: 0.5
+  temp_post: 1.
+train:
+  learning_rate: 0.01
+  epochs: 1000
+  weight_decay: 0.0
+  use_k_fold: false
+  k: 5
+  early_stopping: 0
+  spplit_idx: 0
+  weighted_ce: 1
+  reconstruct_x: true
