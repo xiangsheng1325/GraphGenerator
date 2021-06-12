@@ -108,14 +108,13 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
         import GraphGenerator.models.rmat as rmat
         graphs = eval(generator).generate(input_data, config)
     elif generator in ['vgae', 'graphite']:
-        import GraphGenerator.models.vgae as vgae
-        import GraphGenerator.models.graphite as graphite
         set_device(config)
         sp_adj = nx.adjacency_matrix(input_data).astype(np.float32)
         # print("Shape!", sp_adj.shape)
         feature = coo_to_csp(sp.diags(np.array([1. for i in range(sp_adj.shape[0])],
                                                 dtype=np.float32)).tocoo()).to(config.device)
         if generator == 'vgae':
+            import GraphGenerator.models.vgae as vgae
             if config.model.variational:
                 model_name = "{}.{}".format(generator, "VGAE")
             else:
@@ -126,6 +125,7 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
                                      act=F.relu,
                                      layers=config.model.num_GNN_layers).to(config.device)
         elif generator == 'graphite':
+            import GraphGenerator.models.graphite as graphite
             if config.model.variational:
                 model_name = "{}.{}".format(generator, "GraphiteVAE")
             else:
@@ -135,6 +135,8 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
                                      config.model.embedding_dim,
                                      config.model.decoding_dim,
                                      act=F.relu).to(config.device)
+        elif generator == 'sbmgnn':
+            import GraphGenerator.models.sbmgnn as sbmgnn
         else:
             # model = None
             sys.exit(1)
