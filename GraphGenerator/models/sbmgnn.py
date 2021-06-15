@@ -46,9 +46,9 @@ class GraphConvolution(Module):
                + str(self.out_features) + ')'
 
 
-class DGLFRM(Module):
+class SBMGNN(Module):
     def __init__(self, input_dim, hidden_dim=None, num_classes=0, dropout=0.5):
-        super(DGLFRM, self).__init__()
+        super(SBMGNN, self).__init__()
         self.num_classes = num_classes
         self.dropout = dropout
         self.hidden = [int(x) for x in hidden_dim]

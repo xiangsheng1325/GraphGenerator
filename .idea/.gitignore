@@ -1,2 +1,11 @@
 # Default ignored files
 /workspace.xml
+/webServers.xml
+/vcs.xml
+/sshConfigs.xml
+/other.xml
+/modules.xml
+/misc.xml
+/GraphGenerator.iml
+deployment.xml
+inspectionProfiles/
