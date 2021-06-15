@@ -10,7 +10,7 @@ import sys, torch, copy, datetime
 from GraphGenerator.evaluate.efficiency import coo_to_csp, sp_normalize
 
 
-def train_autoencoder(sp_adj, feature, config, model, optimizer):
+def train_autoencoder_base(sp_adj, feature, config, model, optimizer):
     norm = sp_adj.shape[0] * sp_adj.shape[0] / float((sp_adj.shape[0] * sp_adj.shape[0] - sp_adj.sum()) * 2)
     pos_weight = torch.tensor(float(sp_adj.shape[0] * sp_adj.shape[0] - sp_adj.sum()) / sp_adj.sum()).to(config.device)
     adj_def = torch.from_numpy(sp_adj.toarray()).to(config.device)
@@ -25,6 +25,8 @@ def train_autoencoder(sp_adj, feature, config, model, optimizer):
         if config.model.variational:
             kl_div = 0.5/adj_score.size(0)*(1+2*model.logv-model.mean**2-torch.exp(model.logv)**2).sum(1).mean()
             train_loss -= kl_div
+        if config.model.name == 'SBMGNN':
+            train_loss -= 0.
         optimizer.zero_grad()
         train_loss.backward()
         optimizer.step()
@@ -107,7 +109,7 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
         import GraphGenerator.models.kronecker as kronecker
         import GraphGenerator.models.rmat as rmat
         graphs = eval(generator).generate(input_data, config)
-    elif generator in ['vgae', 'graphite']:
+    elif generator in ['vgae', 'graphite', 'sbmgnn']:
         set_device(config)
         sp_adj = nx.adjacency_matrix(input_data).astype(np.float32)
         # print("Shape!", sp_adj.shape)
@@ -137,11 +139,13 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
                                      act=F.relu).to(config.device)
         elif generator == 'sbmgnn':
             import GraphGenerator.models.sbmgnn as sbmgnn
+            model = eval("{}.{}".format(generator, generator))(sp_adj, feature, config)
+            graphs = None
         else:
             # model = None
             sys.exit(1)
         optimizer = optim.Adam(model.parameters(), lr=config.train.lr)
-        model = train_autoencoder(sp_adj, feature, config, model, optimizer)
+        model = train_autoencoder_base(sp_adj, feature, config, model, optimizer)
         tmp_memory = get_peak_gpu_memory(device=config.device)
         print("Peak GPU memory reserved in training process: {} MiB".format(tmp_memory//1024//1024))
         flush_cached_gpu_memory()
