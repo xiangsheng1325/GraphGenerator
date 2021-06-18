@@ -27,4 +27,4 @@ train:
   early_stopping: 0
   split_idx: 0
   weighted_ce: 1
-  reconstruct_x: true
+  reconstruct_x: false

@@ -10,11 +10,13 @@ SMALL = 1e-16
 EULER_GAMMA = 0.5772156649015329
 
 
-def reparametrize_discrete(logalphas, temp):
+def reparametrize_discrete(logalphas, temp, shape=None):
     """
     input: logit, output: logit
     """
-    uniform = torch.Tensor(logalphas.shape).uniform_(1e-4, 1. - 1e-4)
+    if shape is None:
+        shape = logalphas.shape
+    uniform = torch.Tensor(shape).uniform_(1e-4, 1. - 1e-4)
     logistic = torch.log(uniform) - torch.log(1. - uniform)
     ysample = (logalphas + logistic) / temp
     return ysample
@@ -74,8 +76,8 @@ class GraphConvolution(Module):
         if self.bias is not None:
             self.bias.data.uniform_(-stdv, stdv)
 
-    def forward(self, input, adj):
-        support = torch.dropout(input, p=self.dropout)
+    def forward(self, input, adj, training=True):
+        support = torch.dropout(input, p=self.dropout, train=training)
         support = torch.mm(support, self.weight)
         output = torch.mm(adj, support)
         if self.bias is not None:
@@ -89,10 +91,11 @@ class GraphConvolution(Module):
 
 
 class SBMGNN(Module):
-    def __init__(self, input_dim, hidden_dim=None, num_classes=0, dropout=0.5):
+    def __init__(self, input_dim, hidden_dim=None, num_classes=0, dropout=0.5, config=None):
         super(SBMGNN, self).__init__()
         self.num_classes = num_classes
         self.dropout = dropout
+        self.config = config
         self.hidden = [int(x) for x in hidden_dim]
         self.num_layers = len(self.hidden)
         self.h = GraphConvolution(in_features=input_dim,
@@ -118,8 +121,12 @@ class SBMGNN(Module):
                                    out_features=self.hidden[-1],
                                    act=lambda x: x,
                                    dropout=self.dropout)
+        self.deep_decoder = nn.Sequential(nn.Linear(self.hidden[self.num_layers-1], config.model.g_hidden),
+                                          nn.LeakyReLU(negative_slope=0.2),
+                                          nn.Linear(config.model.g_hidden, config.model.g_hidden//2))
         self.mean = None
         self.logv = None
+        self.pi_logit = None
         self.a = None
         self.beta_a = None
         self.b = None
@@ -128,6 +135,11 @@ class SBMGNN(Module):
         self.x_hat = None
         self.logit_post = None
         self.log_prior = None
+        self.z_discrete = None
+        self.z_real = None
+        self.y_sample = None
+        self.reconstructions = None
+        self.get_alpha_beta(config=self.config)
 
     def get_alpha_beta(self, config, training=False):
         a_val = np.log(np.exp(config.model.alpha0) - 1)
@@ -140,7 +152,11 @@ class SBMGNN(Module):
         beta_a = torch.unsqueeze(beta_a, 0)
         beta_b = torch.unsqueeze(beta_b, 0)
         self.beta_a = torch.tile(beta_a, [config.model.num_nodes, 1])
+        self.beta_a = Variable(self.beta_a, requires_grad=True)
         self.beta_b = torch.tile(beta_b, [config.model.num_nodes, 1])
+        self.beta_b = Variable(self.beta_b, requires_grad=True)
+
+    def get_reconstructions(self, config, training):
         self.v = kumaraswamy_sample(self.beta_a, self.beta_b)
         v_term = torch.log(self.v + SMALL)
         self.log_prior = torch.cumsum(v_term, axis=1)
@@ -152,16 +168,37 @@ class SBMGNN(Module):
                                                                 config.model.temp_post,
                                                                 calc_v=False)
         self.z_discrete = torch.round(self.z_discrete) if not training else self.z_discrete
+        z = torch.mul(self.z_discrete, self.z_real)
+        if config.model.deep_decoder:
+            z = self.deep_decoder(z)
+        self.reconstructions = torch.mm(z, torch.transpose(z, 1, 0))
+        return self.reconstructions
 
-
-    def forward(self, adj, x=None, device='cuda:0'):
-        support = self.h(x, adj)
+    def forward(self, adj, x=None, device='cuda:0', training=True):
+        support = self.h(x, adj, training=training)
         for h in self.h_mid:
-            support = h(support, adj)
-        self.mean = self.h1(support, adj)
-        self.logv = self.h2(support, adj)
-        pi_logit = self.h3(support, adj)
-        pass
+            support = h(support, adj, training=training)
+        self.mean = self.h1(support, adj, training=training)
+        self.logv = self.h2(support, adj, training=training)
+        self.pi_logit = self.h3(support, adj, training=training)
+        return self.get_reconstructions(config=self.config, training=training)
+
+    def monte_carlo_sample(self, pi_logit, z_mean, z_log_std, temp, S, sigmoid_fn):
+        shape = list(pi_logit.shape)
+        shape.insert(0, S)
+        y_sample = reparametrize_discrete(pi_logit, temp, shape)
+        z_discrete = torch.sigmoid(y_sample)
+        z_discrete = torch.round(z_discrete)
+        noise = Variable(torch.rand(z_mean.shape[0], z_mean.shape[1], dtype=torch.float32)).to(self.config.device)
+        z_real = noise * torch.exp(z_log_std) + z_mean
+        emb = torch.mul(z_real, z_discrete)
+        if self.config.model.deep_decoder:
+            emb = self.deep_decoder(emb)
+        emb_t = emb.permute((0, 2, 1))
+        adj_rec = torch.matmul(emb, emb_t)
+        adj_rec = adj_rec.mean(dim=0)
+        z_activated = torch.sum(z_discrete) / (shape[0] * shape[1])
+        return adj_rec, z_activated
 
 
 def train_sbmgnn(sp_adj, feature, config=None):
@@ -171,4 +208,40 @@ def train_sbmgnn(sp_adj, feature, config=None):
     print('Alpha0: ' + str(config.model.alpha0))
     print('WeightedCE: ' + str(config.train.weighted_ce))
     print('ReconstructX: ' + str(config.train.reconstruct_x))
+    model = SBMGNN(input_dim=config.model.num_nodes,
+                   hidden_dim=config.model.hidden,
+                   config=conf)
+    optimizer = torch.optim.Adam(model.parameters(), lr=config.train.learning_rate)
+
     pass
+
+
+if __name__ == '__main__':
+    class tmpmodl:
+        g_hidden = 16
+        deep_decoder = 1
+        temp_post = 1.
+        alpha0 = 10.
+        num_nodes = 2
+
+    class tmpconf:
+        def __init__(self):
+            self.input_dim = 16
+            self.hidden_dim = [32, 16]
+            self.model = tmpmodl
+            self.device = 'cpu'
+            self.lr = 0.01
+
+    conf = tmpconf()
+    model = SBMGNN(input_dim=conf.input_dim,
+                   hidden_dim=conf.hidden_dim,
+                   config=conf)
+    optimizer = torch.optim.Adam(model.parameters(), lr=conf.lr)
+    x = torch.ones(conf.model.num_nodes, conf.input_dim)
+    adj = torch.ones(conf.model.num_nodes, conf.model.num_nodes)
+    tmp = model(adj, x, device=conf.device)
+    loss = F.binary_cross_entropy_with_logits(tmp, adj)
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+    tmp1 = model(adj, x, device=conf.device)
