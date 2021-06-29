@@ -25,8 +25,8 @@ def train_autoencoder_base(sp_adj, feature, config, model, optimizer):
         if config.model.variational:
             kl_div = 0.5/adj_score.size(0)*(1+2*model.logv-model.mean**2-torch.exp(model.logv)**2).sum(1).mean()
             train_loss -= kl_div
-        if config.model.name == 'SBMGNN':
-            train_loss -= 0.
+            if config.model.name == 'SBMGNN':
+                train_loss += model.calculate_kl_div(['kl_kumar_beta', 'kl_discrete'])
         optimizer.zero_grad()
         train_loss.backward()
         optimizer.step()
@@ -139,8 +139,10 @@ def train_and_inference(input_data, generator, config=None, repeat=1):
                                      act=F.relu).to(config.device)
         elif generator == 'sbmgnn':
             import GraphGenerator.models.sbmgnn as sbmgnn
-            model = eval("{}.{}".format(generator, generator))(sp_adj, feature, config)
-            graphs = None
+            model_name = "{}.{}".format(generator, 'SBMGNN')
+            model = eval(model_name)(config.model.num_nodes,
+                                     config.model.hidden,
+                                     config=config).to(config.device)
         else:
             # model = None
             sys.exit(1)

@@ -11,16 +11,17 @@ dataset:
 model:
   name: SBMGNN
   hidden: [64, 50]
-  num_nodes: 2000
+  num_nodes: 20
   g_hidden: 32
   deep_decoder: 1
   dropout: 0.5
   alpha0: 10.
   temp_prior: 0.5
   temp_post: 1.
+  variational: false
 train:
-  learning_rate: 0.01
-  epochs: 100
+  lr: 0.01
+  max_epochs: 100
   weight_decay: 0.0
   use_k_fold: false
   k: 5

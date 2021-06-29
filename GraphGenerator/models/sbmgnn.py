@@ -10,13 +10,78 @@ SMALL = 1e-16
 EULER_GAMMA = 0.5772156649015329
 
 
+def log_density_logistic(logalphas, y_sample, temp):
+    """
+    log-density of the Logistic distribution, from
+    Maddison et. al. (2017) (right after equation 26)
+    Input logalpha is a logit (alpha is a probability ratio)
+    """
+    exp_term = logalphas + y_sample * -temp
+    log_prob = exp_term + torch.log(temp) - 2. * F.softplus(exp_term)
+    return log_prob
+
+
+def Beta_fn(a, b):
+    beta_ab = torch.exp(torch.lgamma(a) + torch.lgamma(b) - torch.lgamma(a + b))
+    return beta_ab
+
+
+# the prior is default Beta(alpha_0, 1)
+def kl_kumar_beta(a, b, prior_alpha=10., log_beta_prior=np.log(1. / 10.)):
+    """
+    KL divergence between Kumaraswamy(a, b) and Beta(prior_alpha, prior_beta)
+    as in Nalisnick & Smyth (2017) (12)
+    - we require you to calculate the log of beta function, since that's a fixed quantity
+    """
+    prior_beta = 1.
+
+    # digamma = b.log() - 1/(2. * b) - 1./(12 * b.pow(2)) # this doesn't seem to work
+    first_term = ((a - prior_alpha) / (a + SMALL)) * (-1 * EULER_GAMMA - torch.digamma(b) - 1. / (b + SMALL))
+    second_term = torch.log(a + SMALL) + torch.log(b + SMALL) + log_beta_prior
+    third_term = -(b - 1) / (b + SMALL)
+
+    ab = a * b + SMALL
+    kl = 1. / (1 + ab) * Beta_fn(1. / (a + SMALL), b)
+    kl += 1. / (2 + ab) * Beta_fn(2. / (a + SMALL), b)
+    kl += 1. / (3 + ab) * Beta_fn(3. / (a + SMALL), b)
+    kl += 1. / (4 + ab) * Beta_fn(4. / (a + SMALL), b)
+    kl += 1. / (5 + ab) * Beta_fn(5. / (a + SMALL), b)
+    kl += 1. / (6 + ab) * Beta_fn(6. / (a + SMALL), b)
+    kl += 1. / (7 + ab) * Beta_fn(7. / (a + SMALL), b)
+    kl += 1. / (8 + ab) * Beta_fn(8. / (a + SMALL), b)
+    kl += 1. / (9 + ab) * Beta_fn(9. / (a + SMALL), b)
+    kl += 1. / (10 + ab) * Beta_fn(10. / (a + SMALL), b)
+    kl *= (prior_beta - 1) * b
+
+    kl += first_term + second_term + third_term
+    # return tf.reduce_mean(tf.reduce_sum(kl, 1))
+    return kl.sum(dim=1).mean()
+
+
+def kl_discrete(logit_posterior, logit_prior, y_sample, temp, temp_prior):
+    """
+    KL divergence between the prior and posterior
+    inputs are in logit-space
+    """
+    logprior = log_density_logistic(logit_prior, y_sample, temp_prior)
+    logposterior = log_density_logistic(logit_posterior, y_sample, temp)
+    kl = logposterior - logprior
+    # return tf.reduce_mean(tf.reduce_sum(kl, 1))
+    return kl.sum(dim=1).mean()
+
+
+def kl_real(z_log_std, z_mean):
+    kl = -0.5 * (1 + 2 * z_log_std - torch.square(z_mean) - torch.square(torch.exp(z_log_std))).sum(dim=1).mean()
+    return kl
+
+
 def reparametrize_discrete(logalphas, temp, shape=None):
     """
     input: logit, output: logit
     """
     if shape is None:
         shape = logalphas.shape
-    uniform = torch.Tensor(shape).uniform_(1e-4, 1. - 1e-4)
+    uniform = torch.Tensor(shape).uniform_(1e-4, 1. - 1e-4).to(logalphas.device)
     logistic = torch.log(uniform) - torch.log(1. - uniform)
     ysample = (logalphas + logistic) / temp
     return ysample
@@ -25,7 +90,8 @@ def reparametrize_discrete(logalphas, temp, shape=None):
 def sample(z_mean, z_log_std, pi_logit, a, b, temp, calc_v=True, calc_real=True):
     if calc_real:
         # mu + standard_samples * stand_deviation
-        z_real = z_mean + torch.Tensor(z_mean.shape).uniform_(1e-4, 1. - 1e-4) * torch.exp(z_log_std)
+        noise = torch.Tensor(z_mean.shape).uniform_(1e-4, 1. - 1e-4).to(z_mean.device)
+        z_real = z_mean + noise * torch.exp(z_log_std)
     else:
         z_real = None
 
@@ -47,7 +113,7 @@ def logit(x):
 
 
 def kumaraswamy_sample(a, b):
-    u = torch.Tensor(a.shape).uniform_(1e-4, 1. - 1e-4)
+    u = torch.Tensor(a.shape).uniform_(1e-4, 1. - 1e-4).to(a.device)
     # return (1. - u.pow(1./b)).pow(1./a)
     return torch.exp(torch.log(1. - torch.exp(torch.log(u) / (b+SMALL)) + SMALL) / (a+SMALL))
 
@@ -77,7 +143,10 @@ class GraphConvolution(Module):
             self.bias.data.uniform_(-stdv, stdv)
 
     def forward(self, input, adj, training=True):
-        support = torch.dropout(input, p=self.dropout, train=training)
+        if self.dropout >= 0.:
+            support = torch.dropout(input, p=self.dropout, train=training)
+        else:
+            support = input
         support = torch.mm(support, self.weight)
         output = torch.mm(adj, support)
         if self.bias is not None:
@@ -101,7 +170,7 @@ class SBMGNN(Module):
         self.h = GraphConvolution(in_features=input_dim,
                                   out_features=self.hidden[0],
                                   act=nn.LeakyReLU(negative_slope=0.2),
-                                  dropout=self.dropout)
+                                  dropout=-1.)
         h_mid = []
         for i in range(self.num_layers-2):
             h_mid.append(GraphConvolution(in_features=self.hidden[i],
@@ -200,6 +269,30 @@ class SBMGNN(Module):
         z_activated = torch.sum(z_discrete) / (shape[0] * shape[1])
         return adj_rec, z_activated
 
+    def calculate_kl_div(self, funcs=None):
+        cost = 0.
+        tmp = 0.
+        if funcs is None:
+            funcs = ['kl_discrete', 'kl_kumar_beta']
+        for func in funcs:
+            if func == 'kl_zreal':
+                tmp = kl_real(model.logv, model.mean) / self.config.model.num_nodes
+            elif func == 'kl_discrete':
+                tmp = kl_discrete(model.logit_post,
+                                  logit(torch.exp(model.log_prior)),
+                                  model.y_sample,
+                                  self.config.model.temp_post,
+                                  self.config.model.temp_prior) / self.config.model.num_nodes
+            elif func == 'kl_kumar_beta':
+                tmp = kl_kumar_beta(model.beta_a,
+                                    model.beta_b,
+                                    self.config.model.alpha0,
+                                    log_beta_prior=np.log(1./self.config.model.alpha0)) / self.config.model.num_nodes
+            else:
+                tmp = 0.
+            cost += tmp
+        return cost
+
 
 def train_sbmgnn(sp_adj, feature, config=None):
     print('Using gpus: ' + str(config.gpu))
@@ -213,6 +306,7 @@ def train_sbmgnn(sp_adj, feature, config=None):
                    config=conf)
     optimizer = torch.optim.Adam(model.parameters(), lr=config.train.learning_rate)
 
+    loss = None
     pass
 
 
@@ -239,8 +333,8 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(model.parameters(), lr=conf.lr)
     x = torch.ones(conf.model.num_nodes, conf.input_dim)
     adj = torch.ones(conf.model.num_nodes, conf.model.num_nodes)
-    tmp = model(adj, x, device=conf.device)
-    loss = F.binary_cross_entropy_with_logits(tmp, adj)
+    tmp0 = model(adj, x, device=conf.device)
+    loss = F.binary_cross_entropy_with_logits(tmp0, adj)
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
