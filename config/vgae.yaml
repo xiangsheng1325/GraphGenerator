@@ -1,8 +1,8 @@
 ---
 exp_name: VGAE
 exp_dir: exp/VGAE
-device: cuda:2
-gpu: 2
+device: cuda:1
+gpu: 1
 #device: cpu
 seed: 1234
 dataset:
@@ -10,7 +10,7 @@ dataset:
   data_path: data/
 model:
   name: VGAE
-  num_nodes: 743
+  num_nodes: 100000
   embedding_dim: 32
   hidden_dim: 32
   variational: false
@@ -19,7 +19,7 @@ model:
 train:
   optimizer: Adam
   lr: 1.0e-2
-  max_epochs: 1000
+  max_epochs: 100
   display_iter: 10
   snapshot_epoch: 1000
 #test:
