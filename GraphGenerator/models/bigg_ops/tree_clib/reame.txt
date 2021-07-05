@@ -1,0 +1,14 @@
+# Installation on NVIDIA GeForce RTX 3090 and CUDA 11.1
+Using default Makefile, there is no bug when installing BiGG in this environment.
+
+# Installation on different devices and environments
+The installation of BiGG requires one more step, i.e., check the computing capability of your gpu.
+
+## check the computing capability
+Visiting this website, we can query the corresponding computing capability: https://developer.nvidia.com/cuda-gpus
+
+## choosing specific Makefile
+According the query result, choosing specific Makefile_xx as your Makefile.
+
+For example, if BiGG needs to be installed on GeForce RTX 2080 Ti, the `Makefile_75` needs to be renamed as `Makefile`.
+
