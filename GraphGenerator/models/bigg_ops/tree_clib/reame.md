@@ -10,5 +10,5 @@ Visiting this website, we can query the corresponding computing capability: http
 ## choosing specific Makefile
 According the query result, choosing specific Makefile_xx as your Makefile.
 
-For example, if BiGG needs to be installed on GeForce RTX 2080 Ti, the `Makefile_75` needs to be renamed as `Makefile`.
+For example, if BiGG needs to be installed on GeForce RTX 2080 Ti, the `Makefile_75` will be renamed as `Makefile`.
 
