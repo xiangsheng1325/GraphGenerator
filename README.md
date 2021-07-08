@@ -93,6 +93,11 @@ If the generator runs well, this step can be skipped.
 _Example:_
 * run `python -m GraphGenerator --phase test -g bigg --config config/bigg.yaml`
 
+Note that some algorithms may be affected by the CUDA version. (For example, Bigg may encounter problems during testing,
+please refer to [this page](https://github.com/xiangsheng1325/GraphGenerator/blob/main/GraphGenerator/models/bigg_ops/tree_clib/reame.md)
+to find resolutions. )
+
+
 **3. Train and infer new graphs**
 
 Enjoy your graph simulation and graph data generation.
