@@ -8,7 +8,10 @@ BASEPATH = os.path.dirname(os.path.abspath(__file__))
 class CustomDevelop(develop):
     def run(self):
         original_cwd = os.getcwd()
-
+        folder = os.path.join(BASEPATH, 'GraphGenerator/models/kronecker_ops')
+        if not os.path.exists(os.path.join(folder, 'Makefile.config')):
+            os.chdir(folder)
+            subprocess.check_call(['unzip', '-o', '-d', '.', 'kronecker_src.zip'])
         folders = [
             os.path.join(BASEPATH, 'GraphGenerator/models/bigg_ops/tree_clib'),
             os.path.join(BASEPATH, 'GraphGenerator/models/kronecker_ops/examples/kronfit')
