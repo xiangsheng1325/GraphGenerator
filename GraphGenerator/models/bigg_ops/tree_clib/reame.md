@@ -10,6 +10,6 @@ Visiting this website, we can query the corresponding computing capability: http
 ## choosing specific Makefile
 According to the query result, choosing specific Makefile_xx as your Makefile.
 
-For example, if the existing GPU device is GeForce RTX 2080 Ti, the `Makefile_75` will be renamed as `Makefile`
-because the computing capability of 2080 Ti is `7.5`.
+For example, if the existing GPU device is GeForce RTX 2080, the `Makefile_75` or `Makefile_70` can be renamed
+as `Makefile` because the computing capability of 2080 Ti is `7.5`.
 
