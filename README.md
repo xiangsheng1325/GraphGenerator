@@ -95,7 +95,7 @@ _Example:_
 
 Note that some algorithms may be affected by the CUDA version. (For example, Bigg may encounter problems during testing,
 please refer to [this page](https://github.com/xiangsheng1325/GraphGenerator/blob/main/GraphGenerator/models/bigg_ops/tree_clib/reame.md)
-to find resolutions. )
+to find resolutions.)
 
 
 **3. Train and infer new graphs**
@@ -112,3 +112,15 @@ Calculating the distance between two set of graphs to evaluate the experimental 
 _Example:_
 * run `python -m GraphGenerator --phase evaluate -i new_google.graphs -r google.graph`
 
+# Reference
+Please use the following BibTex to cite this work if it makes contributions to your publications.
+
+BibTex:
+```
+@Article{Sheng2021General,
+    title="General Graph Generators: Experiments, Analysis, and Improvements",
+    author="Xiang, Sheng and Wen, Dong and Cheng, Dawei and Zhang, Ying and Qin, Lu and Qian, Zhengping and Lin, Xuemin",
+    journal="The VLDB Journal",
+    year="2021"
+}
+```
