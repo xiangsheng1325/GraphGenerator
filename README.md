@@ -119,7 +119,7 @@ BibTex:
 ```
 @Article{Xiang2021General,
     author={Xiang, Sheng and Wen, Dong and Cheng, Dawei and Zhang, Ying and Qin, Lu and Qian, Zhengping and Lin, Xuemin},
-    title={General graph generators: experiments, analyses, and improvements},
+    title={General Graph Generators: Experiments, Analyses, and Improvements},
     journal={The VLDB Journal},
     year={2021},
     month={Oct},
