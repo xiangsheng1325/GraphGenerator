@@ -120,12 +120,14 @@ BibTex:
 @Article{Xiang2021General,
     author={Xiang, Sheng and Wen, Dong and Cheng, Dawei and Zhang, Ying and Qin, Lu and Qian, Zhengping and Lin, Xuemin},
     title={General Graph Generators: Experiments, Analyses, and Improvements},
+    url={https://doi.org/10.1007/s00778-021-00701-5},
+    doi={10.1007/s00778-021-00701-5},
     journal={The VLDB Journal},
+    publisher={Springer}
+    issn={0949-877X},
+    pages={1--29},
     year={2021},
     month={Oct},
     day={07},
-    issn={0949-877X},
-    doi={10.1007/s00778-021-00701-5},
-    url={https://doi.org/10.1007/s00778-021-00701-5}
 }
 ```
