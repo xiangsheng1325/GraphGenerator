@@ -1056,6 +1056,40 @@ def train_graphrnn(train_graphs, args):
     return rnn, output
 
 
-def infer_graphrnn(test_graphs, args, model=None):
+def infer_graphrnn(test_graphs=None, args=None, model=None):
     rnn, output = model
-    print("### Infer!")
+    test_batch_size = args.test.batch_size
+    rnn.hidden = rnn.init_hidden(test_batch_size)
+    rnn.eval()
+    output.eval()
+
+    # generate graphs
+    max_num_node = int(args.max_num_node)
+    y_pred = Variable(
+        torch.zeros(test_batch_size, max_num_node, args.max_prev_node)).cuda()  # normalized prediction score
+    y_pred_long = Variable(torch.zeros(test_batch_size, max_num_node, args.max_prev_node)).cuda()  # discrete prediction
+    x_step = Variable(torch.ones(test_batch_size, 1, args.max_prev_node)).cuda()
+    for i in range(max_num_node):
+        h = rnn(x_step)
+        y_pred_step = output(h)
+        y_pred[:, i:i + 1, :] = F.sigmoid(y_pred_step)
+        x_step = sample_sigmoid(y_pred_step, sample=True, sample_time=1)
+        y_pred_long[:, i:i + 1, :] = x_step
+        rnn.hidden = Variable(rnn.hidden.data).cuda()
+    y_pred_data = y_pred.data
+    y_pred_long_data = y_pred_long.data.long()
+
+    # save graphs as pickle
+    G_pred_list = []
+    for i in range(test_batch_size):
+        adj_pred = decode_adj(y_pred_long_data[i].cpu().numpy())
+        G_pred = get_graph(adj_pred)  # get a graph from zero-padded adj
+        G_pred_list.append(G_pred)
+
+    # # save prediction histograms, plot histogram over each time step
+    # if save_histogram:
+    #     save_prediction_histogram(y_pred_data.cpu().numpy(),
+    #                           fname_pred=args.figure_prediction_save_path+args.fname_pred+str(epoch)+'.jpg',
+    #                           max_num_node=max_num_node)
+    return G_pred_list
+    #print("### Infer!")
